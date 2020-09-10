@@ -21,6 +21,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/Scouting/interface/ScoutingMuon.h"
 #include "DataFormats/Scouting/interface/ScoutingParticle.h"
+#include "DataFormats/Scouting/interface/ScoutingVertex.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
@@ -112,11 +113,12 @@ private:
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
 
-  const edm::EDGetTokenT<std::vector<ScoutingMuon> >      muonsToken;
+  const edm::EDGetTokenT<std::vector<ScoutingMuon> >        muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
+  const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
   
 
   //const edm::EDGetTokenT<GenEventInfoProduct>             genEvtInfoToken;
@@ -142,12 +144,10 @@ private:
   std::vector<bool>            l1Result_;
        
         
-
-
   //Photon
   const static int 	max_pho = 1000;
   UInt_t n_pho;
-  vector<Float16_t> 	    	Photon_pt;
+  vector<Float16_t> 	    Photon_pt;
   vector<Float16_t>        	Photon_eta;
   vector<Float16_t>        	Photon_phi;
   vector<Float16_t>	    	Photon_m;
@@ -159,11 +159,11 @@ private:
   //Electron
   const static int 	max_ele = 1000;
   UInt_t n_ele;
-  vector<Float16_t> 	    Electron_pt;
-  vector<Float16_t>        Electron_eta;
-  vector<Float16_t>        Electron_phi;
+  vector<Float16_t> 	Electron_pt;
+  vector<Float16_t>     Electron_eta;
+  vector<Float16_t>     Electron_phi;
   vector<Float16_t>	    Electron_m;
-  vector<Float16_t>        Electron_d0;
+  vector<Float16_t>     Electron_d0;
   vector<Float16_t>	    Electron_dz;
   vector<Float16_t>	    Electron_detain;
   vector<Float16_t>	    Electron_dphiin;
@@ -171,10 +171,10 @@ private:
   vector<Float16_t>	    Electron_HoE;
   vector<Float16_t>	    Electron_ooEMOop;
   vector<Float16_t>	    Electron_mHits;
-  vector<Float16_t>        Electron_charge;
-  vector<Float16_t>        Electron_ecaliso;
+  vector<Float16_t>     Electron_charge;
+  vector<Float16_t>     Electron_ecaliso;
   vector<Float16_t>	    Electron_hcaliso;
-  vector<Float16_t>        Electron_tkiso;
+  vector<Float16_t>     Electron_tkiso;
 
   //Muon
   const static int 	max_mu = 1000;
@@ -193,34 +193,33 @@ private:
   vector<Float16_t> 	Muon_dz;
   vector<Float16_t> 	Muon_nvalidmuon_hits;
   vector<Float16_t> 	Muon_nvalidpixelhits;
-  
   vector<Float16_t> 	Muon_nmatchedstations;
-  vector<Float16_t>       Muon_type;
-  vector<Float16_t>       Muon_nvalidstriphits;
-  vector<Float16_t>       Muon_trkqoverp;
-  vector<Float16_t>       Muon_trklambda;
-  vector<Float16_t>       Muon_trkpt;
-  vector<Float16_t>       Muon_trkphi;
-  vector<Float16_t>       Muon_trketa;
-  vector<Float16_t>       Muon_trkqoverperror;
-  vector<Float16_t>       Muon_trklambdaerror;
-  vector<Float16_t>       Muon_trkpterror;
-  vector<Float16_t>       Muon_trkphierror;
-  vector<Float16_t>       Muon_trketaerror;
-  vector<Float16_t>       Muon_trkdszerror;
-  vector<Float16_t>       Muon_trkdsz;
+  vector<Float16_t>     Muon_type;
+  vector<Float16_t>     Muon_nvalidstriphits;
+  vector<Float16_t>     Muon_trkqoverp;
+  vector<Float16_t>     Muon_trklambda;
+  vector<Float16_t>     Muon_trkpt;
+  vector<Float16_t>     Muon_trkphi;
+  vector<Float16_t>     Muon_trketa;
+  vector<Float16_t>     Muon_trkqoverperror;
+  vector<Float16_t>     Muon_trklambdaerror;
+  vector<Float16_t>     Muon_trkpterror;
+  vector<Float16_t>     Muon_trkphierror;
+  vector<Float16_t>     Muon_trketaerror;
+  vector<Float16_t>     Muon_trkdszerror;
+  vector<Float16_t>     Muon_trkdsz;
   int muontvtxind[max_mu];
 
   //PFJets
   const static int 	max_jet = 1000;
   UInt_t n_jet;
-  vector<Float16_t> 	    Jet_pt;
-  vector<Float16_t>         Jet_eta;
-  vector<Float16_t>         Jet_phi;
+  vector<Float16_t> 	Jet_pt;
+  vector<Float16_t>     Jet_eta;
+  vector<Float16_t>     Jet_phi;
   vector<Float16_t>	    Jet_m;
   vector<Float16_t>	    Jet_area;
   vector<Float16_t>	    Jet_chargedHadronEnergy;
-  vector<Float16_t>         Jet_neutralHadronEnergy;
+  vector<Float16_t>     Jet_neutralHadronEnergy;
   vector<Float16_t>	    Jet_photonEnergy;
   vector<Float16_t>	    Jet_electronEnergy;
   vector<Float16_t>	    Jet_muonEnergy;
@@ -228,26 +227,27 @@ private:
   vector<Float16_t>	    Jet_HFEMEnergy;
   vector<Float16_t>	    Jet_HOEnergy;
   vector<Float16_t>	    Jet_chargedHadronMultiplicity;
-  vector<Float16_t>         Jet_neutralHadronMultiplicity;
+  vector<Float16_t>     Jet_neutralHadronMultiplicity;
   vector<Float16_t>	    Jet_photonMultiplicity;
   vector<Float16_t>	    Jet_electronMultiplicity;
   vector<Float16_t>	    Jet_muonMultiplicity;
   vector<Float16_t>	    Jet_HFHadronMultiplicity;
   vector<Float16_t>	    Jet_HFEMMultiplicity;
-  vector<Float16_t> 	    Jet_csv;
-  vector<Float16_t> 	    Jet_mvaDiscriminator;
+  vector<Float16_t> 	Jet_csv;
+  vector<Float16_t> 	Jet_mvaDiscriminator;
   std::vector< std::vector<int16_t> >  	    Jet_constituents;
 
   //PFCand
   const static int 	max_pfcand = 10000;
   UInt_t n_pfcand;
-  vector<Float16_t> 	    pfcandpt;
-  vector<Float16_t>         pfcandeta;
-  vector<Float16_t>         pfcandphi;
-  vector<Float16_t>	    pdcandm;
-  vector<Float16_t>	    pfcandpdgid;
-  vector<Float16_t>	    pfcandvertex;
+  vector<Float16_t> PFcand_pt;
+  vector<Float16_t> PFcand_eta;
+  vector<Float16_t> PFcand_phi;
+  vector<Float16_t>	PFcand_m;
+  vector<Float16_t>	PFcand_pdgid;
+  vector<Float16_t>	PFcand_vertex;
 
+  // Fatjets 
   UInt_t n_fatjet;
   vector<Float16_t> FatJet_area;
   vector<Float16_t> FatJet_eta;
@@ -262,6 +262,16 @@ private:
   vector<Float16_t> FatJet_mass;
   vector<Float16_t> FatJet_msoftdrop;
   vector<Float16_t> FatJet_mtrim;
+
+  // Primary vertices
+  UInt_t n_pvs;
+  vector<Float16_t> Vertex_x;
+  vector<Float16_t> Vertex_y;
+  vector<Float16_t> Vertex_z;
+  vector<Float16_t> Vertex_tracksSize;
+  vector<Float16_t> Vertex_chi2;
+  vector<Float16_t> Vertex_ndof;
+  vector<Float16_t> Vertex_isValidVtx;
         
   // TTree carrying the event weight information
   TTree* tree;
@@ -279,9 +289,10 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
   muonsToken               (consumes<std::vector<ScoutingMuon> >             (iConfig.getParameter<edm::InputTag>("muons"))), 
   electronsToken           (consumes<std::vector<ScoutingElectron> >         (iConfig.getParameter<edm::InputTag>("electrons"))), 
-  photonsToken           (consumes<std::vector<ScoutingPhoton> >         (iConfig.getParameter<edm::InputTag>("photons"))), 
+  photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
+  verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
 //  pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
 //  gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
@@ -309,119 +320,123 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
     
   tree->Branch("lumSec"		, &lumSec			 , "lumSec/i" );
   tree->Branch("run"			, &run				 , "run/i" );
-  //tree->Branch("nvtx"			, &nvtx				 , "nvtx/i" );
     
   // Triggers
   tree->Branch("trig"                 , &trig                          , "trig/b");
   tree->Branch("l1Result"		, "std::vector<bool>"             ,&l1Result_	, 32000, 0);		
-  // Pileup info
-  //tree->Branch("nvtx"                 , &nvtx                          , "nvtx/i"       );
-
   //Electrons
-  tree->Branch("n_ele"            	   ,&n_ele 			, "n_ele/i"		);
-  tree->Branch("Electron_pt"         ,&Electron_pt 		 		);
-  tree->Branch("Electron_eta"               ,&Electron_eta 		  	);
-  tree->Branch("Electron_phi"               ,&Electron_phi 		 	);
-  tree->Branch("Electron_charge"            ,&Electron_charge 		 	);
-  tree->Branch("Electron_m"            	   ,&Electron_m 			 );
-tree->Branch("Electron_tkiso"               ,&Electron_tkiso 		 );
-tree->Branch("Electron_HoE"            	   ,&Electron_HoE 		 );
-tree->Branch("Electron_sigmaietaieta"       ,&Electron_sigmaietaieta 	 );
- tree->Branch("Electron_dphiin"              ,&Electron_dphiin 		 );
- tree->Branch("Electron_detain"              ,&Electron_detain 		 );
- tree->Branch("Electron_mHits"               ,&Electron_mHits 		 );
- tree->Branch("Electron_ooEMOop"             ,&Electron_ooEMOop  		 );
+  tree->Branch("n_ele"            	     ,&n_ele 			, "n_ele/i"		);
+  tree->Branch("Electron_pt"             ,&Electron_pt 		 	    );
+  tree->Branch("Electron_eta"            ,&Electron_eta 		    );
+  tree->Branch("Electron_phi"            ,&Electron_phi 		    );
+  tree->Branch("Electron_charge"         ,&Electron_charge          );
+  tree->Branch("Electron_m"            	 ,&Electron_m 			    );
+  tree->Branch("Electron_tkiso"          ,&Electron_tkiso 		    );
+  tree->Branch("Electron_HoE"            ,&Electron_HoE 		    );
+  tree->Branch("Electron_sigmaietaieta"  ,&Electron_sigmaietaieta 	);
+  tree->Branch("Electron_dphiin"         ,&Electron_dphiin 		    );
+  tree->Branch("Electron_detain"         ,&Electron_detain 		    );
+  tree->Branch("Electron_mHits"          ,&Electron_mHits 		    );
+  tree->Branch("Electron_ooEMOop"        ,&Electron_ooEMOop  	    );
 
   //Photons
-  tree->Branch("n_pho"            	   ,&n_pho 			, "n_pho/i"		);
-  tree->Branch("Photon_pt"            	   ,&Photon_pt 			);
+  tree->Branch("n_pho"            	       ,&n_pho 			, "n_pho/i"		);
+  tree->Branch("Photon_pt"            	   ,&Photon_pt 			    );
   tree->Branch("Photon_eta"            	   ,&Photon_eta 			);
   tree->Branch("Photon_phi"            	   ,&Photon_phi 			);	
-  tree->Branch("Photon_m"            	   ,&Photon_m 			);
-  tree->Branch("Photon_hcaliso"             ,&Photon_hcaliso 		);
-  tree->Branch("Photon_ecaliso"             ,&Photon_ecaliso 		);
+  tree->Branch("Photon_m"            	   ,&Photon_m 			    );
+  tree->Branch("Photon_hcaliso"            ,&Photon_hcaliso 		);
+  tree->Branch("Photon_ecaliso"            ,&Photon_ecaliso 		);
   tree->Branch("Photon_HoE"            	   ,&Photon_HoE 			);
-  tree->Branch("Photon_sigmaietaieta"       ,&Photon_sigmaietaieta		 );
+  tree->Branch("Photon_sigmaietaieta"      ,&Photon_sigmaietaieta	);
 
   tree->Branch("n_pfcand"            	   ,&n_pfcand 		,"n_pfcand/i"		);	
-  tree->Branch("pfcandpt"        	   ,&pfcandpt 		 );
-  tree->Branch("pfcandeta"            	   ,&pfcandeta 		 );
-  tree->Branch("pfcandphi"            	   ,&pfcandphi		 );
-  tree->Branch("pdcandm"            	   ,&pdcandm 		 );
-  tree->Branch("pfcandpdgid"               ,&pfcandpdgid		 );
-  tree->Branch("pfcandvertex"              ,&pfcandvertex 	 );
+  tree->Branch("PFcand_pt"        	       ,&PFcand_pt 		 );
+  tree->Branch("PFcand_eta"            	   ,&PFcand_eta 	 );
+  tree->Branch("PFcand_phi"            	   ,&PFcand_phi		 );
+  tree->Branch("PFcand_m"            	   ,&PFcand_m 		 );
+  tree->Branch("PFcand_pdgid"              ,&PFcand_pdgid	 );
+  tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
 
-  tree->Branch("n_mu"            	   ,&n_mu 			, "n_mu/i"		);
-  tree->Branch("Muon_pt", &Muon_pt	);
-  tree->Branch("Muon_eta", &Muon_eta	);
-  tree->Branch("Muon_phi", &Muon_phi	);
-  tree->Branch("Muon_m", &Muon_m	);
-  tree->Branch("Muon_ecaliso", &Muon_ecaliso	);
-  tree->Branch("Muon_hcaliso", &Muon_hcaliso	);
-  tree->Branch("Muon_trkiso", &Muon_trkiso	);
-  tree->Branch("Muon_chi2", &Muon_chi2	);
-  tree->Branch("Muon_ndof", &Muon_ndof	);
-  tree->Branch("Muon_charge", &Muon_charge	);
-  tree->Branch("Muon_dxy", &Muon_dxy	);
-  tree->Branch("Muon_dz", &Muon_dz	);
-  tree->Branch("Muon_nvalidmuon_hits", &Muon_nvalidmuon_hits	);
-  tree->Branch("Muon_validpixelhits", &Muon_nvalidpixelhits  );
-  
-  tree->Branch("Muon_nmatchedstations", &Muon_nmatchedstations	);
-  tree->Branch("Muon_type",   &Muon_type    );
-  tree->Branch("Muon_nvalidstriphits",    &Muon_nvalidstriphits   );
-  tree->Branch("Muon_trkqoverp",    &Muon_trkqoverp   );
-  tree->Branch("Muon_trklambda",   &Muon_trklambda    );
-  tree->Branch("Muon_trkpt",   &Muon_trkpt    );
-  tree->Branch("Muon_trkphi",  &Muon_trkphi     );
-  tree->Branch("Muon_trketa",   &Muon_trketa    );
-  tree->Branch("Muon_trkqoverperror",   &Muon_trkqoverperror    );
-  tree->Branch("Muon_trklambdaerror",   &Muon_trklambdaerror    );
-  tree->Branch("Muon_trkpterror",   &Muon_trkpterror    );
-  tree->Branch("Muon_trkphierror",   &Muon_trkphierror    );
-  tree->Branch("Muon_trketaerror",   &Muon_trketaerror    );
-  tree->Branch("Muon_trkdszerror",   &Muon_trkdszerror    );
-  tree->Branch("Muon_trkdsz",    &Muon_trkdsz   );
+  tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
+  tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
+  tree->Branch("Vertex_y"              ,&Vertex_y   	    );
+  tree->Branch("Vertex_z"              ,&Vertex_z  		    );
+  tree->Branch("Vertex_tracksSize"     ,&Vertex_tracksSize 	);
+  tree->Branch("Vertex_chi2"           ,&Vertex_chi2	    );
+  tree->Branch("Vertex_ndof"           ,&Vertex_ndof	    );
+  tree->Branch("Vertex_isValidVtx"     ,&Vertex_isValidVtx 	);
+
+  tree->Branch("n_mu"            	    , &n_mu 			, "n_mu/i"		);
+  tree->Branch("Muon_pt"                , &Muon_pt	);
+  tree->Branch("Muon_eta"               , &Muon_eta	);
+  tree->Branch("Muon_phi"               , &Muon_phi	);
+  tree->Branch("Muon_m"                 , &Muon_m	);
+  tree->Branch("Muon_ecaliso"           , &Muon_ecaliso	);
+  tree->Branch("Muon_hcaliso"           , &Muon_hcaliso	);
+  tree->Branch("Muon_trkiso"            , &Muon_trkiso	);
+  tree->Branch("Muon_chi2"              , &Muon_chi2	);
+  tree->Branch("Muon_ndof"              , &Muon_ndof	);
+  tree->Branch("Muon_charge"            , &Muon_charge	);
+  tree->Branch("Muon_dxy"               , &Muon_dxy	);
+  tree->Branch("Muon_dz"                , &Muon_dz	);
+  tree->Branch("Muon_nvalidmuon_hits"   , &Muon_nvalidmuon_hits	);
+  tree->Branch("Muon_validpixelhits"    , &Muon_nvalidpixelhits );
+  tree->Branch("Muon_nmatchedstations"  , &Muon_nmatchedstations);
+  tree->Branch("Muon_type"              , &Muon_type    );
+  tree->Branch("Muon_nvalidstriphits"   , &Muon_nvalidstriphits   );
+  tree->Branch("Muon_trkqoverp"         , &Muon_trkqoverp   );
+  tree->Branch("Muon_trklambda"         , &Muon_trklambda   );
+  tree->Branch("Muon_trkpt"             , &Muon_trkpt    );
+  tree->Branch("Muon_trkphi"            , &Muon_trkphi   );
+  tree->Branch("Muon_trketa"            , &Muon_trketa   );
+  tree->Branch("Muon_trkqoverperror"    , &Muon_trkqoverperror    );
+  tree->Branch("Muon_trklambdaerror"    , &Muon_trklambdaerror    );
+  tree->Branch("Muon_trkpterror"        , &Muon_trkpterror     );
+  tree->Branch("Muon_trkphierror"       , &Muon_trkphierror    );
+  tree->Branch("Muon_trketaerror"       , &Muon_trketaerror    );
+  tree->Branch("Muon_trkdszerror"       , &Muon_trkdszerror    );
+  tree->Branch("Muon_trkdsz"            , &Muon_trkdsz   );
 
 
-  tree->Branch("n_jet"            	   	,&n_jet 			, "n_jet/i"		);
-  tree->Branch("Jet_pt"            	   	,&Jet_pt 				 );
-  tree->Branch("Jet_eta"            	   	,&Jet_eta 			 );
-  tree->Branch("Jet_phi"            	   	,&Jet_phi 			 );
-  tree->Branch("Jet_m"            	   	,&Jet_m 				 );
-  tree->Branch("Jet_area"            	   	,&Jet_area			 );
-  tree->Branch("Jet_chargedHadronEnergy"         ,&Jet_chargedHadronEnergy 	 );
-  tree->Branch("Jet_neutralHadronEnergy"         ,&Jet_neutralHadronEnergy 	 );
-  tree->Branch("Jet_photonEnergy"            	,&Jet_photonEnergy 		 );
-  tree->Branch("Jet_electronEnergy"              ,&Jet_electronEnergy 		 );
-  tree->Branch("Jet_muonEnergy"    		   ,&Jet_muonEnergy 		 );
-  tree->Branch("Jet_HFHadronEnergy"            	   ,&Jet_HFHadronEnergy 		 );
-  tree->Branch("Jet_HFEMEnergy"            	   ,&Jet_HFEMEnergy 		 );
-  tree->Branch("Jet_HOEnergy"            	   ,&Jet_HOEnergy 		 );
+  tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"		);
+  tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
+  tree->Branch("Jet_eta"            	    ,&Jet_eta 			    );
+  tree->Branch("Jet_phi"            	    ,&Jet_phi 			    );
+  tree->Branch("Jet_m"            	   	    ,&Jet_m 				);
+  tree->Branch("Jet_area"            	    ,&Jet_area			    );
+  tree->Branch("Jet_chargedHadronEnergy"    ,&Jet_chargedHadronEnergy 	 );
+  tree->Branch("Jet_neutralHadronEnergy"    ,&Jet_neutralHadronEnergy 	 );
+  tree->Branch("Jet_photonEnergy"           ,&Jet_photonEnergy 		     );
+  tree->Branch("Jet_electronEnergy"         ,&Jet_electronEnergy 		 );
+  tree->Branch("Jet_muonEnergy"    		    ,&Jet_muonEnergy 		     );
+  tree->Branch("Jet_HFHadronEnergy"         ,&Jet_HFHadronEnergy 		 );
+  tree->Branch("Jet_HFEMEnergy"            	,&Jet_HFEMEnergy 		     );
+  tree->Branch("Jet_HOEnergy"            	,&Jet_HOEnergy 		         );
   tree->Branch("Jet_chargedHadronMultiplicity"      ,&Jet_chargedHadronMultiplicity 		 );
   tree->Branch("Jet_neutralHadronMultiplicity"      ,&Jet_neutralHadronMultiplicity 		 );
-  tree->Branch("Jet_photonMultiplicity"            	   ,&Jet_photonMultiplicity 		 );
-  tree->Branch("Jet_electronMultiplicity"            	   ,&Jet_electronMultiplicity 		 );
-  tree->Branch("Jet_muonMultiplicity"            	   ,&Jet_muonMultiplicity 		 );
-  tree->Branch("Jet_HFHadronMultiplicity"            	   ,&Jet_HFHadronMultiplicity 		 );
-  tree->Branch("Jet_HFEMMultiplicity"            	   ,&Jet_HFEMMultiplicity 		 );
+  tree->Branch("Jet_photonMultiplicity"            	,&Jet_photonMultiplicity 		 );
+  tree->Branch("Jet_electronMultiplicity"           ,&Jet_electronMultiplicity 		 );
+  tree->Branch("Jet_muonMultiplicity"            	,&Jet_muonMultiplicity 		     );
+  tree->Branch("Jet_HFHadronMultiplicity"           ,&Jet_HFHadronMultiplicity 		 );
+  tree->Branch("Jet_HFEMMultiplicity"            	,&Jet_HFEMMultiplicity 		     );
   tree->Branch("Jet_csv"            	   	,&Jet_csv 		 );
-  tree->Branch("Jet_mvaDiscriminator"            	   ,&Jet_mvaDiscriminator 		 );
-  tree->Branch("Jet_constituents"            	, "std::vector< vector<int16_t> >"   , &Jet_constituents 		, 32000, 0);
+  tree->Branch("Jet_mvaDiscriminator"       ,&Jet_mvaDiscriminator 		 );
+  tree->Branch("Jet_constituents"           , "std::vector< vector<int16_t> >"   , &Jet_constituents 		, 32000, 0);
   
-  tree->Branch("FatJet_area",&FatJet_area);
-  tree->Branch("FatJet_eta",&FatJet_eta);
-  tree->Branch("FatJet_n2b1",&FatJet_n2b1);
-  tree->Branch("FatJet_n3b1",&FatJet_n3b1);
-  tree->Branch("FatJet_phi",&FatJet_phi);
-  tree->Branch("FatJet_pt",&FatJet_pt);
-  tree->Branch("FatJet_tau1",&FatJet_tau1);
-  tree->Branch("FatJet_tau2",&FatJet_tau2);
-  tree->Branch("FatJet_tau3",&FatJet_tau3);
-  tree->Branch("FatJet_tau4",&FatJet_tau4);
-  tree->Branch("FatJet_mass",&FatJet_mass);
-  tree->Branch("FatJet_msoftdrop",&FatJet_msoftdrop);
-  tree->Branch("FatJet_mtrim",&FatJet_mtrim);
+  tree->Branch("FatJet_area"        ,&FatJet_area   );
+  tree->Branch("FatJet_eta"         ,&FatJet_eta    );
+  tree->Branch("FatJet_n2b1"        ,&FatJet_n2b1   );
+  tree->Branch("FatJet_n3b1"        ,&FatJet_n3b1   );
+  tree->Branch("FatJet_phi"         ,&FatJet_phi    );
+  tree->Branch("FatJet_pt"          ,&FatJet_pt     );
+  tree->Branch("FatJet_tau1"        ,&FatJet_tau1   );
+  tree->Branch("FatJet_tau2"        ,&FatJet_tau2   );
+  tree->Branch("FatJet_tau3"        ,&FatJet_tau3   );
+  tree->Branch("FatJet_tau4"        ,&FatJet_tau4   );
+  tree->Branch("FatJet_mass"        ,&FatJet_mass   );
+  tree->Branch("FatJet_msoftdrop"   ,&FatJet_msoftdrop);
+  tree->Branch("FatJet_mtrim"       ,&FatJet_mtrim    );
   
 
  
@@ -457,6 +472,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingParticle> > pfcandsH;
   iEvent.getByToken(pfcandsToken, pfcandsH);
 
+  Handle<vector<ScoutingVertex> > verticesH;
+  iEvent.getByToken(verticesToken, verticesH);
+
   run = iEvent.eventAuxiliary().run();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
 
@@ -474,8 +492,26 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     if (i == 7  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig += 128; // DST_HT450_PFScouting
   }
   
-  Jet_constituents.clear();
 
+  // *
+  // Electrons here
+  // *
+  Electron_pt.clear();
+  Electron_eta.clear();
+  Electron_phi.clear();
+  Electron_m.clear();
+  Electron_d0.clear();
+  Electron_dz.clear();
+  Electron_detain.clear();
+  Electron_dphiin.clear();
+  Electron_sigmaietaieta.clear();
+  Electron_HoE.clear();
+  Electron_ooEMOop.clear();
+  Electron_mHits.clear();
+  Electron_charge.clear();
+  Electron_ecaliso.clear();
+  Electron_hcaliso.clear();
+  Electron_tkiso.clear();
   n_ele = 0;
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
@@ -496,6 +532,17 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       n_ele++;
     }
 
+  // *
+  // Photons here
+  // *
+  Photon_pt.clear();
+  Photon_eta.clear();
+  Photon_phi.clear();
+  Photon_m.clear();
+  Photon_sigmaietaieta.clear();
+  Photon_HoE.clear();
+  Photon_ecaliso.clear();
+  Photon_hcaliso.clear();
   n_pho = 0;
 
   for (auto photons_iter = photonsH->begin(); photons_iter != photonsH->end(); ++photons_iter) {
@@ -511,15 +558,48 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pho++;
   }
 
+  // *
+  // Primary vertices
+  // * 
+  n_pvs = 0;
+  Vertex_x.clear();
+  Vertex_y.clear();
+  Vertex_z.clear();
+  Vertex_tracksSize.clear();
+  Vertex_chi2.clear();
+  Vertex_ndof.clear();
+  Vertex_isValidVtx.clear();
+    for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
+        Vertex_x.push_back( vertices_iter->x() );
+        Vertex_y.push_back( vertices_iter->y() );
+        Vertex_z.push_back( vertices_iter->z() );
+        Vertex_tracksSize.push_back( vertices_iter->tracksSize() );
+        Vertex_chi2.push_back( vertices_iter->chi2() );
+        Vertex_ndof.push_back( vertices_iter->ndof() );
+        Vertex_isValidVtx.push_back( vertices_iter->isValidVtx() );
+        n_pvs++;
+    }
+
+  // * 
+  // Particle Flow candidates 
+  // *
+  PFcand_pt.clear();
+  PFcand_eta.clear();
+  PFcand_phi.clear();
+  PFcand_m.clear();
+  PFcand_pdgid.clear();
+  PFcand_vertex.clear();
   vector<PseudoJet> fj_part;
   n_pfcand = 0;
-    for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
-      pfcandpt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())));
-      pfcandeta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())));
-      pfcandphi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())));
-    pdcandm.push_back(pfcands_iter->m());
-    pfcandpdgid.push_back(pfcands_iter->pdgId());
-    pfcandvertex.push_back(pfcands_iter->vertex());
+  for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
+    PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())));
+    PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())));
+    PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())));
+    PFcand_m.push_back(pfcands_iter->m());
+    PFcand_pdgid.push_back(pfcands_iter->pdgId());
+    PFcand_vertex.push_back(pfcands_iter->vertex());
+
+    // May want to change this to just charged PFs 
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
     temp_jet.reset_PtYPhiM(pfcands_iter->pt(), pfcands_iter->eta(), pfcands_iter->phi(), pfcands_iter->m());
     temp_jet.set_user_index(pfcands_iter->pdgId());
@@ -528,9 +608,41 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pfcand++;
   } 
 
-     n_mu=0;
-for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
- 	  Muon_pt.push_back(muons_iter->pt());
+  // 
+  // Muons   
+  // 
+  Muon_pt.clear();
+  Muon_eta.clear();
+  Muon_phi.clear();
+  Muon_m.clear();
+  Muon_ecaliso.clear();
+  Muon_hcaliso.clear();
+  Muon_trkiso.clear();
+  Muon_chi2.clear();
+  Muon_ndof.clear();
+  Muon_charge.clear();
+  Muon_dxy.clear();
+  Muon_dz.clear();
+  Muon_nvalidmuon_hits.clear();
+  Muon_nvalidpixelhits.clear();
+  Muon_nmatchedstations.clear();
+  Muon_type.clear();
+  Muon_nvalidstriphits.clear();
+  Muon_trkqoverp.clear();
+  Muon_trklambda.clear();
+  Muon_trkpt.clear();
+  Muon_trkphi.clear();
+  Muon_trketa.clear();
+  Muon_trkqoverperror.clear();
+  Muon_trklambdaerror.clear();
+  Muon_trkpterror.clear();
+  Muon_trkphierror.clear();
+  Muon_trketaerror.clear();
+  Muon_trkdszerror.clear();
+  Muon_trkdsz.clear();
+  n_mu=0;
+  for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
+ 	Muon_pt.push_back(muons_iter->pt());
    	Muon_eta.push_back(muons_iter->eta());
    	Muon_phi.push_back(muons_iter->phi());
    	Muon_m.push_back(muons_iter->m());
@@ -562,7 +674,32 @@ for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_ite
     n_mu++;
  }
 
-
+  // * 
+  // Jets 
+  // * 
+  Jet_pt.clear();
+  Jet_eta.clear();
+  Jet_phi.clear();
+  Jet_m.clear();
+  Jet_area.clear();
+  Jet_chargedHadronEnergy.clear();
+  Jet_neutralHadronEnergy.clear();
+  Jet_photonEnergy.clear();
+  Jet_electronEnergy.clear();
+  Jet_muonEnergy.clear();
+  Jet_HFHadronEnergy.clear();
+  Jet_HFEMEnergy.clear();
+  Jet_HOEnergy.clear();
+  Jet_chargedHadronMultiplicity.clear();
+  Jet_neutralHadronMultiplicity.clear();
+  Jet_photonMultiplicity.clear();
+  Jet_electronMultiplicity.clear();
+  Jet_muonMultiplicity.clear();
+  Jet_HFHadronMultiplicity.clear();
+  Jet_HFEMMultiplicity.clear();
+  Jet_csv.clear();
+  Jet_mvaDiscriminator.clear();
+  Jet_constituents.clear();
   n_jet = 0;
    for (auto pfjets_iter = pfjetsH->begin(); pfjets_iter != pfjetsH->end(); ++pfjets_iter) {
     Jet_pt.push_back(pfjets_iter->pt());
@@ -592,7 +729,23 @@ for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_ite
     n_jet++;
   }
 
-//FatJet stuff
+  // * 
+  // FatJets 
+  // *
+  FatJet_area.clear();
+  FatJet_eta.clear();
+  FatJet_n2b1.clear();
+  FatJet_n3b1.clear();
+  FatJet_phi.clear();
+  FatJet_pt.clear();
+  FatJet_tau1.clear();
+  FatJet_tau2.clear();
+  FatJet_tau3.clear();
+  FatJet_tau4.clear();
+  FatJet_mass.clear();
+  FatJet_msoftdrop.clear();
+  FatJet_mtrim.clear();
+
   JetDefinition ak8_def = JetDefinition(antikt_algorithm, 0.8);
   double sd_z_cut = 0.10;
   double sd_beta = 0;
@@ -614,6 +767,7 @@ for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_ite
 
   ClusterSequenceArea ak8_cs(fj_part, ak8_def, area_def);
   vector<PseudoJet> ak8_jets = sorted_by_pt(ak8_cs.inclusive_jets(100.0));
+
 
   for(auto &j: ak8_jets) {
     FatJet_area.push_back(j.area());
@@ -660,100 +814,7 @@ for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_ite
 }
 
 void ScoutingNanoAOD::clearVars(){
-  Photon_pt.clear();
-  Photon_eta.clear();
-  Photon_phi.clear();
-  Photon_m.clear();
-  Photon_sigmaietaieta.clear();
-  Photon_HoE.clear();
-  Photon_ecaliso.clear();
-  Photon_hcaliso.clear();
-  Electron_pt.clear();
-  Electron_eta.clear();
-  Electron_phi.clear();
-  Electron_m.clear();
-  Electron_d0.clear();
-  Electron_dz.clear();
-  Electron_detain.clear();
-  Electron_dphiin.clear();
-  Electron_sigmaietaieta.clear();
-  Electron_HoE.clear();
-  Electron_ooEMOop.clear();
-  Electron_mHits.clear();
-  Electron_charge.clear();
-  Electron_ecaliso.clear();
-  Electron_hcaliso.clear();
-  Electron_tkiso.clear();
-  Muon_pt.clear();
-  Muon_eta.clear();
-  Muon_phi.clear();
-  Muon_m.clear();
-  Muon_ecaliso.clear();
-  Muon_hcaliso.clear();
-  Muon_trkiso.clear();
-  Muon_chi2.clear();
-  Muon_ndof.clear();
-  Muon_charge.clear();
-  Muon_dxy.clear();
-  Muon_dz.clear();
-  Muon_nvalidmuon_hits.clear();
-  Muon_nvalidpixelhits.clear();
-  Muon_nmatchedstations.clear();
-  Muon_type.clear();
-  Muon_nvalidstriphits.clear();
-  Muon_trkqoverp.clear();
-  Muon_trklambda.clear();
-  Muon_trkpt.clear();
-  Muon_trkphi.clear();
-  Muon_trketa.clear();
-  Muon_trkqoverperror.clear();
-  Muon_trklambdaerror.clear();
-  Muon_trkpterror.clear();
-  Muon_trkphierror.clear();
-  Muon_trketaerror.clear();
-  Muon_trkdszerror.clear();
-  Muon_trkdsz.clear();
-  Jet_pt.clear();
-  Jet_eta.clear();
-  Jet_phi.clear();
-  Jet_m.clear();
-  Jet_area.clear();
-  Jet_chargedHadronEnergy.clear();
-  Jet_neutralHadronEnergy.clear();
-  Jet_photonEnergy.clear();
-  Jet_electronEnergy.clear();
-  Jet_muonEnergy.clear();
-  Jet_HFHadronEnergy.clear();
-  Jet_HFEMEnergy.clear();
-  Jet_HOEnergy.clear();
-  Jet_chargedHadronMultiplicity.clear();
-  Jet_neutralHadronMultiplicity.clear();
-  Jet_photonMultiplicity.clear();
-  Jet_electronMultiplicity.clear();
-  Jet_muonMultiplicity.clear();
-  Jet_HFHadronMultiplicity.clear();
-  Jet_HFEMMultiplicity.clear();
-  Jet_csv.clear();
-  Jet_mvaDiscriminator.clear();
-  pfcandpt.clear();
-  pfcandeta.clear();
-  pfcandphi.clear();
-  pdcandm.clear();
-  pfcandpdgid.clear();
-  pfcandvertex.clear();
-  FatJet_area.clear();
-  FatJet_eta.clear();
-  FatJet_n2b1.clear();
-  FatJet_n3b1.clear();
-  FatJet_phi.clear();
-  FatJet_pt.clear();
-  FatJet_tau1.clear();
-  FatJet_tau2.clear();
-  FatJet_tau3.clear();
-  FatJet_tau4.clear();
-  FatJet_mass.clear();
-  FatJet_msoftdrop.clear();
-  FatJet_mtrim.clear();
+// Pretty sure this isn't called or does nothing
 }
 
 void ScoutingNanoAOD::beginJob() {
