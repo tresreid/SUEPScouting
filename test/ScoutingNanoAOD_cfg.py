@@ -1,4 +1,8 @@
 import FWCore.ParameterSet.Config as cms
+import FWCore.Utilities.FileUtils as FileUtils
+import os
+
+
 
 # Set parameters externally 
 from FWCore.ParameterSet.VarParsing import VarParsing
@@ -66,17 +70,37 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.float,
     'Cross-section for a Monte Carlo Sample'
 )
+params.register(
+    'fileList', 
+    'none', 
+    VarParsing.multiplicity.singleton,VarParsing.varType.string,
+    'input list of files'
+)
+
+params.setDefault(
+    'maxEvents', 
+    10 
+)
+
+params.setDefault(
+    'outputFile', 
+    'test.root' 
+)
+
+
 
 # Define the process
 process = cms.Process("LL")
 
 # Parse command line arguments
+print("Made it here")
 params.parseArguments()
+print("Not here")
 
 # Message Logger settings
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.destinations = ['cout', 'cerr']
-process.MessageLogger.cerr.FwkReport.reportEvery = 5
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000 
 #process.MessageLogger.cerr.threshold = 'INFO'
 #process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 #    limit = cms.untracked.int32(-1)
@@ -90,23 +114,19 @@ process.options = cms.untracked.PSet(
 )
 
 # How many events to process
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(params.maxEvents) )
 
 # Input EDM files
+#list = FileUtils.loadListFromFile(options.inputFiles)
+#readFiles = cms.untracked.vstring(*list)
+
+print("reading files?")
+if params.fileList == "none" : readFiles = params.inputFiles
+else : 
+    readFiles = cms.untracked.vstring( FileUtils.loadListFromFile (os.environ['CMSSW_BASE']+'/src/PhysicsTools/ScoutingNanoAOD/test/'+params.fileList) )
+print("we shall see")
 process.source = cms.Source("PoolSource",
-	fileNames = cms.untracked.vstring([
-    'root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18DRPremix/QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/102X_upgrade2018_realistic_v15-v1/60000/21A2AB9C-CEAF-BD4E-869D-AF63DDE129E9.root',
-    #'root://cmsxrootd.fnal.gov//store/data/Run2018C/ScoutingPFHT/RAW/v1/000/319/456/00000/4AB8E305-0F84-E811-9CEC-FA163E6716A8.root',
-    #'/store/data/Run2018C/ScoutingPFHT/RAW/v1/000/319/456/00000/1ED6A51C-0D84-E811-9B33-FA163E21E4C4.root',
-#       '/store/data/Run2018A/ScoutingPFMuon/RAW/v1/000/316/569/00000/D6AB8ED4-7F65-E811-BCCC-FA163ED6BA41.root',
-#	'/store/data/Run2018A/ScoutingPFMuon/RAW/v1/000/316/569/00000/7C89F148-8E65-E811-82AF-FA163EE95896.root',
-	#'file:outputScoutingPF.root'
-
-
-
-
-	])
+	fileNames = cms.untracked.vstring(readFiles) 
 )
 
 # Load the standard set of configuration modules
@@ -129,8 +149,9 @@ else :
 
 # Define the services needed for the treemaker
 process.TFileService = cms.Service("TFileService", 
+    fileName = cms.string(params.outputFile)
     #fileName = cms.string("scoutingData18.root")
-    fileName = cms.string("scoutingQCD500to700.root")
+    #fileName = cms.string("scoutingQCD500to700.root")
 )
 
 # Tree for the generator weights
@@ -141,8 +162,9 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 #from DarkPhotonAnalysis.DimuonAnalysis2018.TriggerPaths_cfi import getL1Conf
-L1Info = ['L1_DoubleMu4p5er2p0_SQ_OS_Mass_Min7', 'L1_DoubleMu_12_5','L1_DoubleMu_15_7','L1_TripleMu_5_3_3','L1_TripleMu_5_5_3','L1_QuadMu0','L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4','L1_DoubleMu4p5er2p0_SQ_OS_Mass7to18','L1_DoubleMu4_SQ_OS_dR_Max1p2','L1_SingleMu22','L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4','L1_DoubleMu4p5_SQ_OS_dR_Max1p2','L1_DoubleMu4p5_SQ_OS','L1_DoubleMu0er1p5_SQ_dR_Max1p4','L1_DoubleMu0er2p0_SQ_dR_Max1p4','L1_DoubleMu0_SQ']
 #L1Info = ['L1_DoubleMu4p5er2p0_SQ_OS_Mass_Min7', 'L1_DoubleMu_12_5','L1_DoubleMu_15_7','L1_TripleMu_5_3_3','L1_TripleMu_5_5_3','L1_QuadMu0','L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4','L1_DoubleMu4p5er2p0_SQ_OS_Mass7to18','L1_DoubleMu4_SQ_OS_dR_Max1p2','L1_SingleMu22','L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4','L1_DoubleMu4p5_SQ_OS_dR_Max1p2','L1_DoubleMu4p5_SQ_OS','L1_DoubleMu0er1p5_SQ_dR_Max1p4','L1_DoubleMu0er2p0_SQ_dR_Max1p4','L1_DoubleMu0_SQ']
+#L1Info = ['L1_DoubleMu4p5er2p0_SQ_OS_Mass_Min7', 'L1_DoubleMu_12_5','L1_DoubleMu_15_7','L1_TripleMu_5_3_3','L1_TripleMu_5_5_3','L1_QuadMu0','L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4','L1_DoubleMu4p5er2p0_SQ_OS_Mass7to18','L1_DoubleMu4_SQ_OS_dR_Max1p2','L1_SingleMu22','L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4','L1_DoubleMu4p5_SQ_OS_dR_Max1p2','L1_DoubleMu4p5_SQ_OS','L1_DoubleMu0er1p5_SQ_dR_Max1p4','L1_DoubleMu0er2p0_SQ_dR_Max1p4','L1_DoubleMu0_SQ']
+L1Info = ['L1_HTT200er','L1_HTT255er','L1_HTT280er','L1_HTT320er','L1_HTT360er','L1_ETT2000','L1_HTT400er','L1_HTT450er','L1_SingleJet180','L1_SingleJet200','L1_DoubleJet30er2p5_Mass_Min300_dEta_Max1p5','L1_DoubleJet30er2p5_Mass_Min330_dEta_Max1p5','L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5']
 # Make tree
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	

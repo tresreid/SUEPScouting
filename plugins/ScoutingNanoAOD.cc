@@ -235,7 +235,7 @@ private:
   vector<Float16_t>	    Jet_HFEMMultiplicity;
   vector<Float16_t> 	Jet_csv;
   vector<Float16_t> 	Jet_mvaDiscriminator;
-  std::vector< std::vector<int16_t> >  	    Jet_constituents;
+  vector<Float16_t>  	Jet_nConstituents;
 
   //PFCand
   const static int 	max_pfcand = 10000;
@@ -422,7 +422,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_HFEMMultiplicity"            	,&Jet_HFEMMultiplicity 		     );
   tree->Branch("Jet_csv"            	   	,&Jet_csv 		 );
   tree->Branch("Jet_mvaDiscriminator"       ,&Jet_mvaDiscriminator 		 );
-  tree->Branch("Jet_constituents"           , "std::vector< vector<int16_t> >"   , &Jet_constituents 		, 32000, 0);
+  tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
   
   tree->Branch("FatJet_area"        ,&FatJet_area   );
   tree->Branch("FatJet_eta"         ,&FatJet_eta    );
@@ -699,7 +699,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Jet_HFEMMultiplicity.clear();
   Jet_csv.clear();
   Jet_mvaDiscriminator.clear();
-  Jet_constituents.clear();
+  Jet_nConstituents.clear();
   n_jet = 0;
    for (auto pfjets_iter = pfjetsH->begin(); pfjets_iter != pfjetsH->end(); ++pfjets_iter) {
     Jet_pt.push_back(pfjets_iter->pt());
@@ -725,7 +725,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     Jet_HFEMMultiplicity.push_back(pfjets_iter->HFEMMultiplicity());
     Jet_csv.push_back(pfjets_iter->csv());
     Jet_mvaDiscriminator.push_back(pfjets_iter->mvaDiscriminator());
-    // Jet_constituents.push_back(vector<int16_t>(pfjets_iter->constituents()));
+    Jet_nConstituents.push_back( pfjets_iter->constituents().size() );
     n_jet++;
   }
 
@@ -790,8 +790,27 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     FatJet_tau4.push_back(nSub4.result(j));
   }
   
+ // * 
+ // L1 info
+ // *
+ l1Result_.clear();
+
  if (doL1) {
-    l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
+
+    // For debugging: from https://github.com/Sam-Harper/usercode/blob/09e2252601da473ba02de966930863df57512438/TrigTools/plugins/L1MenuExample.cc
+    //std::cout <<"l1 menu: name decisions prescale "<<std::endl;
+    //l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
+    //for(size_t bitNr=0;bitNr<l1GtUtils_->decisionsFinal().size();bitNr++){
+    //const std::string& bitName = l1GtUtils_->decisionsFinal()[bitNr].first; // l1GtUtils.decisionsFinal() is of type std::vector<std::pair<std::string,bool> >
+
+    //bool passInitial = l1GtUtils_->decisionsInitial()[bitNr].second; //before masks and prescales, so if we have a 15 GeV electron passing L1_SingleEG10, it will show up as true but will likely not cause a L1 acccept due to the seeds high prescale
+    //bool passInterm = l1GtUtils_->decisionsInterm()[bitNr].second; //after mask (?, unsure what this is)
+    //bool passFinal = l1GtUtils_->decisionsFinal()[bitNr].second; //after masks & prescales, true means it gives a L1 accept to the HLT
+    //int prescale = l1GtUtils_->prescales()[bitNr].second;
+    //std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
+    //}
+
+    // not sure what this is for...
     /*	for( int r = 99; r<280; r++){
 	string name ("empty");
 	bool algoName_ = false;
@@ -799,6 +818,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	cout << "getAlgNameFromBit = " << algoName_  << endl;
 	cout << "L1 bit number = " << r << " ; L1 bit name = " << name << endl;
 	}*/
+
+    // Seems like L1 trigger info is messed up...? 
     for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
       bool l1htbit = 0;	
 			
