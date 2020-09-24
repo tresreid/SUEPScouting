@@ -52,6 +52,7 @@ params.register(
 
 params.register(
     'GlobalTagData', 
+    #'101X_dataRun2_HLT_v7',
     '101X_dataRun2_Prompt_v11', 
     VarParsing.multiplicity.singleton,VarParsing.varType.string,
     'Process name for the HLT paths'
@@ -161,27 +162,52 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
     useLHEWeights = cms.bool(params.useWeights)
 )
 
-#from DarkPhotonAnalysis.DimuonAnalysis2018.TriggerPaths_cfi import getL1Conf
-#L1Info = ['L1_DoubleMu4p5er2p0_SQ_OS_Mass_Min7', 'L1_DoubleMu_12_5','L1_DoubleMu_15_7','L1_TripleMu_5_3_3','L1_TripleMu_5_5_3','L1_QuadMu0','L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4','L1_DoubleMu4p5er2p0_SQ_OS_Mass7to18','L1_DoubleMu4_SQ_OS_dR_Max1p2','L1_SingleMu22','L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4','L1_DoubleMu4p5_SQ_OS_dR_Max1p2','L1_DoubleMu4p5_SQ_OS','L1_DoubleMu0er1p5_SQ_dR_Max1p4','L1_DoubleMu0er2p0_SQ_dR_Max1p4','L1_DoubleMu0_SQ']
-#L1Info = ['L1_DoubleMu4p5er2p0_SQ_OS_Mass_Min7', 'L1_DoubleMu_12_5','L1_DoubleMu_15_7','L1_TripleMu_5_3_3','L1_TripleMu_5_5_3','L1_QuadMu0','L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4','L1_DoubleMu4p5er2p0_SQ_OS_Mass7to18','L1_DoubleMu4_SQ_OS_dR_Max1p2','L1_SingleMu22','L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4','L1_DoubleMu4p5_SQ_OS_dR_Max1p2','L1_DoubleMu4p5_SQ_OS','L1_DoubleMu0er1p5_SQ_dR_Max1p4','L1_DoubleMu0er2p0_SQ_dR_Max1p4','L1_DoubleMu0_SQ']
-L1Info = ['L1_HTT200er','L1_HTT255er','L1_HTT280er','L1_HTT320er','L1_HTT360er','L1_ETT2000','L1_HTT400er','L1_HTT450er','L1_SingleJet180','L1_SingleJet200','L1_DoubleJet30er2p5_Mass_Min300_dEta_Max1p5','L1_DoubleJet30er2p5_Mass_Min330_dEta_Max1p5','L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5']
+
+HLTInfo = [
+  "DST_DoubleMu1_noVtx_CaloScouting_v*",
+  "DST_DoubleMu3_noVtx_CaloScouting_v*",
+  "DST_DoubleMu3_noVtx_Mass10_PFScouting_v*",
+  "DST_L1HTT_CaloScouting_PFScouting_v*",
+  "DST_CaloJet40_CaloScouting_PFScouting_v*",
+  "DST_HT250_CaloScouting_v*",
+  "DST_HT410_PFScouting_v*",
+  "DST_HT450_PFScouting_v*"]
+L1Info = [
+    'L1_HTT200er',
+    'L1_HTT255er',
+    'L1_HTT280er',
+    'L1_HTT320er',
+    'L1_HTT360er',
+    'L1_HTT400er',
+    'L1_HTT450er',
+    'L1_SingleJet180',
+    'L1_SingleJet200',
+    'L1_DoubleJet30er2p5_Mass_Min300_dEta_Max1p5',
+    'L1_DoubleJet30er2p5_Mass_Min330_dEta_Max1p5',
+    'L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5',
+    'L1_ETT2000']
+
 # Make tree
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	
-    	triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
+    hltProcess=cms.string("HLT"),
+    bits          = cms.InputTag("TriggerResults", "", "HLT"),
 	doL1 = cms.bool(True),
-        triggerConfiguration = cms.PSet(
-    		hltResults            = cms.InputTag('TriggerResults','','HLT'),
-    		l1tResults            = cms.InputTag(''),
-    		daqPartitions         = cms.uint32(1),
-    		l1tIgnoreMaskAndPrescale = cms.bool(False),
-    		throw                 = cms.bool(False)
-  	),
-	ReadPrescalesFromFile = cms.bool( False ),
-        AlgInputTag = cms.InputTag("gtStage2Digis"),
-        l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
-        l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
-                                l1Seeds           = cms.vstring(L1Info),
+    
+    #	triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
+    #    triggerConfiguration = cms.PSet(
+    #		hltResults            = cms.InputTag('TriggerResults','','HLT'),
+    #		l1tResults            = cms.InputTag(''),
+    #		daqPartitions         = cms.uint32(1),
+    #		l1tIgnoreMaskAndPrescale = cms.bool(False),
+    #		throw                 = cms.bool(False)
+  	#),
+	#ReadPrescalesFromFile = cms.bool( False ),
+    AlgInputTag = cms.InputTag("gtStage2Digis"),
+    l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
+    l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
+    l1Seeds           = cms.vstring(L1Info),
+    hltSeeds          = cms.vstring(HLTInfo),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
 	muons            = cms.InputTag("hltScoutingMuonPacker"),
 	electrons        = cms.InputTag("hltScoutingEgammaPacker"),
