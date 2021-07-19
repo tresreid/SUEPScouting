@@ -835,7 +835,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     int tmpidx = -1;
     for (auto &j: ak8_jets) {
       for (auto &k: j.constituents()){
-	if (k.user_index() == n_pfcand){
+	if ((UInt_t)k.user_index() == n_pfcand){
 	  tmpidx = n_pfcand;
 	  break;
 	}
