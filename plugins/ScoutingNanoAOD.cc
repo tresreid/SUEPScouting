@@ -264,6 +264,7 @@ private:
   vector<Float16_t>	PFcand_m;
   vector<Float16_t>	PFcand_pdgid;
   vector<Float16_t>	PFcand_vertex;
+  vector<Int_t>	PFcand_fjidx;
 
   // Fatjets 
   UInt_t n_fatjet;
@@ -381,6 +382,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("PFcand_m"            	   ,&PFcand_m 		 );
   tree->Branch("PFcand_pdgid"              ,&PFcand_pdgid	 );
   tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
+  tree->Branch("PFcand_fjidx"             ,&PFcand_fjidx 	 );
 
   tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
   tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
@@ -448,6 +450,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_mvaDiscriminator"       ,&Jet_mvaDiscriminator 		 );
   tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
   
+  tree->Branch("n_fatjet"        ,&n_fatjet                     , "n_fatjet/i"             );
   tree->Branch("FatJet_area"        ,&FatJet_area   );
   tree->Branch("FatJet_eta"         ,&FatJet_eta    );
   tree->Branch("FatJet_n2b1"        ,&FatJet_n2b1   );
@@ -625,6 +628,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   PFcand_m.clear();
   PFcand_pdgid.clear();
   PFcand_vertex.clear();
+  PFcand_fjidx.clear();
   vector<PseudoJet> fj_part;
   n_pfcand = 0;
   for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
@@ -638,7 +642,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     // May want to change this to just charged PFs 
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
     temp_jet.reset_PtYPhiM(pfcands_iter->pt(), pfcands_iter->eta(), pfcands_iter->phi(), pfcands_iter->m());
-    temp_jet.set_user_index(pfcands_iter->pdgId());
+    temp_jet.set_user_index(n_pfcand);
     fj_part.push_back(temp_jet);
 
     n_pfcand++;
@@ -825,6 +829,24 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     FatJet_tau3.push_back(nSub3.result(j));
     FatJet_tau4.push_back(nSub4.result(j));
   }
+  
+  n_pfcand = 0;
+  for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
+    int tmpidx = -1;
+    for (auto &j: ak8_jets) {
+      for (auto &k: j.constituents()){
+	if (k.user_index() == n_pfcand){
+	  tmpidx = n_pfcand;
+	  break;
+	}
+      }
+      if (tmpidx>-1)
+	break;
+    }
+    PFcand_fjidx.push_back(tmpidx);
+    n_pfcand++;
+  }
+
   
  // * 
  // L1 info
