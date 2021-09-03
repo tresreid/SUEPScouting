@@ -109,24 +109,21 @@ private:
   virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-  virtual void clearVars();
+  int getCharge(int pdgId);
+  bool jetID(const ScoutingPFJet &pfjet);
+
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
-
   const edm::EDGetTokenT<std::vector<ScoutingMuon> >        muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
-  
-
-  //const edm::EDGetTokenT<GenEventInfoProduct>             genEvtInfoToken;
+  const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
-
-        
 	
   bool doL1;       
   triggerExpression::Data triggerCache_;
@@ -143,7 +140,6 @@ private:
   std::vector<std::string>     l1Seeds_;
   std::vector<bool>            l1Result_;
        
-        
   //Photon
   const static int 	max_pho = 1000;
   UInt_t n_pho;
@@ -177,7 +173,6 @@ private:
   vector<Float16_t>     Electron_tkiso;
 
   //Muon
-  const static int 	max_mu = 1000;
   UInt_t n_mu;
   vector<Float16_t> 	Muon_pt;
   vector<Float16_t> 	Muon_eta;
@@ -208,11 +203,12 @@ private:
   vector<Float16_t>     Muon_trketaerror;
   vector<Float16_t>     Muon_trkdszerror;
   vector<Float16_t>     Muon_trkdsz;
-  int muontvtxind[max_mu];
 
   //PFJets
-  const static int 	max_jet = 1000;
   UInt_t n_jet;
+  UInt_t n_jetId;
+  float ht;
+  bool passJetId;
   vector<Float16_t> 	Jet_pt;
   vector<Float16_t>     Jet_eta;
   vector<Float16_t>     Jet_phi;
@@ -236,9 +232,9 @@ private:
   vector<Float16_t> 	Jet_csv;
   vector<Float16_t> 	Jet_mvaDiscriminator;
   vector<Float16_t>  	Jet_nConstituents;
+  vector<bool> Jet_passId;
 
   //PFCand
-  const static int 	max_pfcand = 10000;
   UInt_t n_pfcand;
   vector<Float16_t> PFcand_pt;
   vector<Float16_t> PFcand_eta;
@@ -259,9 +255,12 @@ private:
   vector<Float16_t> FatJet_tau2;
   vector<Float16_t> FatJet_tau3;
   vector<Float16_t> FatJet_tau4;
+  vector<Float16_t> FatJet_tau21;
+  vector<Float16_t> FatJet_tau32;
   vector<Float16_t> FatJet_mass;
   vector<Float16_t> FatJet_msoftdrop;
   vector<Float16_t> FatJet_mtrim;
+  vector<Float16_t> FatJet_nconst;
 
   // Primary vertices
   UInt_t n_pvs;
@@ -319,11 +318,11 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   // Event weights
     
   tree->Branch("lumSec"		, &lumSec			 , "lumSec/i" );
-  tree->Branch("run"			, &run				 , "run/i" );
+  tree->Branch("run"		, &run				 , "run/i" );
     
   // Triggers
-  tree->Branch("trig"                 , &trig                          , "trig/b");
-  tree->Branch("l1Result"		, "std::vector<bool>"             ,&l1Result_	, 32000, 0);		
+  tree->Branch("trig"                 ,&trig       , "trig/b");
+  tree->Branch("l1Result"		      ,&l1Result_  );		
   //Electrons
   tree->Branch("n_ele"            	     ,&n_ele 			, "n_ele/i"		);
   tree->Branch("Electron_pt"             ,&Electron_pt 		 	    );
@@ -399,7 +398,9 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Muon_trkdsz"            , &Muon_trkdsz   );
 
 
-  tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"		);
+  tree->Branch("ht"                         ,&ht                 );
+  tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"	  );
+  tree->Branch("n_jetId"            	   	,&n_jetId 			, "n_jetId/i" );
   tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
   tree->Branch("Jet_eta"            	    ,&Jet_eta 			    );
   tree->Branch("Jet_phi"            	    ,&Jet_phi 			    );
@@ -423,6 +424,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_csv"            	   	,&Jet_csv 		 );
   tree->Branch("Jet_mvaDiscriminator"       ,&Jet_mvaDiscriminator 		 );
   tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
+  tree->Branch("Jet_passId"           ,&Jet_passId 		 );
   
   tree->Branch("FatJet_area"        ,&FatJet_area   );
   tree->Branch("FatJet_eta"         ,&FatJet_eta    );
@@ -434,12 +436,14 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("FatJet_tau2"        ,&FatJet_tau2   );
   tree->Branch("FatJet_tau3"        ,&FatJet_tau3   );
   tree->Branch("FatJet_tau4"        ,&FatJet_tau4   );
+  tree->Branch("FatJet_tau21"       ,&FatJet_tau21  );
+  tree->Branch("FatJet_tau32"       ,&FatJet_tau32  );
   tree->Branch("FatJet_mass"        ,&FatJet_mass   );
   tree->Branch("FatJet_msoftdrop"   ,&FatJet_msoftdrop);
   tree->Branch("FatJet_mtrim"       ,&FatJet_mtrim    );
+  tree->Branch("FatJet_nconst"      ,&FatJet_nconst   );
   
 
- 
 }
 
 
@@ -599,7 +603,12 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_pdgid.push_back(pfcands_iter->pdgId());
     PFcand_vertex.push_back(pfcands_iter->vertex());
 
-    // May want to change this to just charged PFs 
+    // Cluster charged PF candidates into fat jets
+    if (pfcands_iter->vertex() != 0) continue;
+    if (abs(pfcands_iter->eta()) >= 2.4 ) continue;
+    if (pfcands_iter->pt() < 1) continue; 
+    if (getCharge(pfcands_iter->pdgId()) == 0 ) continue;
+
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
     temp_jet.reset_PtYPhiM(pfcands_iter->pt(), pfcands_iter->eta(), pfcands_iter->phi(), pfcands_iter->m());
     temp_jet.set_user_index(pfcands_iter->pdgId());
@@ -700,53 +709,73 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Jet_csv.clear();
   Jet_mvaDiscriminator.clear();
   Jet_nConstituents.clear();
+  Jet_passId.clear();
   n_jet = 0;
-   for (auto pfjets_iter = pfjetsH->begin(); pfjets_iter != pfjetsH->end(); ++pfjets_iter) {
-    Jet_pt.push_back(pfjets_iter->pt());
-    Jet_eta.push_back(pfjets_iter->eta());
-    Jet_phi.push_back(pfjets_iter->phi());
-    Jet_m.push_back(pfjets_iter->m());
-    Jet_area.push_back(pfjets_iter->jetArea());
-    Jet_chargedHadronEnergy.push_back(pfjets_iter->chargedHadronEnergy());
-    Jet_neutralHadronEnergy.push_back(pfjets_iter->neutralHadronEnergy());
-    Jet_photonEnergy.push_back(pfjets_iter->photonEnergy());
-    Jet_electronEnergy.push_back(pfjets_iter->electronEnergy());
-    Jet_muonEnergy.push_back(pfjets_iter->muonEnergy());
-    Jet_HFHadronEnergy.push_back(pfjets_iter->HFHadronEnergy());
-    Jet_HFEMEnergy.push_back(pfjets_iter->HFEMEnergy());
-    Jet_HOEnergy.push_back(pfjets_iter->HOEnergy());
+  n_jetId = 0;
+  ht = 0;
+  passJetId = false;
+   for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
+
+    Jet_pt .push_back( pfjet->pt() );
+    Jet_eta.push_back( pfjet->eta());
+    Jet_phi.push_back( pfjet->phi());
+    Jet_m  .push_back( pfjet->m()  );
+
+    Jet_area.push_back( pfjet->jetArea());
+
+    Jet_chargedHadronEnergy.push_back( pfjet->chargedHadronEnergy());
+    Jet_neutralHadronEnergy.push_back( pfjet->neutralHadronEnergy());
+    Jet_photonEnergy       .push_back( pfjet->photonEnergy()       );
+    Jet_electronEnergy     .push_back( pfjet->electronEnergy()     );
+    Jet_muonEnergy         .push_back( pfjet->muonEnergy()     );
+    Jet_HFHadronEnergy     .push_back( pfjet->HFHadronEnergy() );
+    Jet_HFEMEnergy         .push_back( pfjet->HFEMEnergy()     );
+    Jet_HOEnergy           .push_back( pfjet->HOEnergy()       );
     
-    Jet_chargedHadronMultiplicity.push_back(pfjets_iter->chargedHadronMultiplicity());
-    Jet_neutralHadronMultiplicity.push_back(pfjets_iter->neutralHadronMultiplicity());
-    Jet_photonMultiplicity.push_back(pfjets_iter->photonMultiplicity());
-    Jet_electronMultiplicity.push_back(pfjets_iter->electronMultiplicity());
-    Jet_muonMultiplicity.push_back(pfjets_iter->muonMultiplicity());
-    Jet_HFHadronMultiplicity.push_back(pfjets_iter->HFHadronMultiplicity());
-    Jet_HFEMMultiplicity.push_back(pfjets_iter->HFEMMultiplicity());
-    Jet_csv.push_back(pfjets_iter->csv());
-    Jet_mvaDiscriminator.push_back(pfjets_iter->mvaDiscriminator());
-    Jet_nConstituents.push_back( pfjets_iter->constituents().size() );
+    Jet_chargedHadronMultiplicity.push_back( pfjet->chargedHadronMultiplicity());
+    Jet_neutralHadronMultiplicity.push_back( pfjet->neutralHadronMultiplicity());
+    Jet_photonMultiplicity       .push_back( pfjet->photonMultiplicity()       );
+    Jet_electronMultiplicity     .push_back( pfjet->electronMultiplicity()     );
+    Jet_muonMultiplicity         .push_back( pfjet->muonMultiplicity()         );
+    Jet_HFHadronMultiplicity     .push_back( pfjet->HFHadronMultiplicity()     );
+    Jet_HFEMMultiplicity         .push_back( pfjet->HFEMMultiplicity()         );
+
+    Jet_csv             .push_back( pfjet->csv() );
+    Jet_mvaDiscriminator.push_back( pfjet->mvaDiscriminator()    );
+    Jet_nConstituents   .push_back( pfjet->constituents().size() );
+    
     n_jet++;
+
+    passJetId = jetID(*pfjet);
+    Jet_passId.push_back( passJetId );
+
+    // apply jet ID 
+    if ( passJetId == false ) continue; 
+    ht += pfjet->pt() ; 
+    n_jetId++ ; 
   }
 
   // * 
   // FatJets 
   // *
   FatJet_area.clear();
-  FatJet_eta.clear();
+  FatJet_eta .clear();
+  FatJet_phi .clear();
+  FatJet_pt  .clear();
+  FatJet_mass.clear();
   FatJet_n2b1.clear();
   FatJet_n3b1.clear();
-  FatJet_phi.clear();
-  FatJet_pt.clear();
   FatJet_tau1.clear();
   FatJet_tau2.clear();
   FatJet_tau3.clear();
   FatJet_tau4.clear();
-  FatJet_mass.clear();
+  FatJet_tau21.clear();
+  FatJet_tau32.clear();
   FatJet_msoftdrop.clear();
   FatJet_mtrim.clear();
+  FatJet_nconst.clear();
 
-  JetDefinition ak8_def = JetDefinition(antikt_algorithm, 0.8);
+  JetDefinition ak15_def = JetDefinition(antikt_algorithm, 1.5);
   double sd_z_cut = 0.10;
   double sd_beta = 0;
   SoftDrop sd_groomer = SoftDrop(sd_z_cut, sd_beta, 1.0);
@@ -765,29 +794,42 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   fastjet::GhostedAreaSpec area_spec(5.0,1,0.01);
   fastjet::AreaDefinition area_def(fastjet::active_area, area_spec);
 
-  ClusterSequenceArea ak8_cs(fj_part, ak8_def, area_def);
-  vector<PseudoJet> ak8_jets = sorted_by_pt(ak8_cs.inclusive_jets(100.0));
+  ClusterSequenceArea ak15_cs(fj_part, ak15_def, area_def);
+  vector<PseudoJet> ak15_jets = sorted_by_pt(ak15_cs.inclusive_jets(100.0));
 
-
-  for(auto &j: ak8_jets) {
+  for(auto &j: ak15_jets) {
     FatJet_area.push_back(j.area());
-    FatJet_eta.push_back(j.pseudorapidity());
+    FatJet_eta .push_back(j.pseudorapidity());
+    FatJet_phi .push_back(j.phi_std());
+    FatJet_pt  .push_back(j.pt());
     FatJet_mass.push_back(j.m());
-    
+
+    FatJet_nconst.push_back(j.constituents().size());
+
     PseudoJet sd_ak8 = sd_groomer(j);
     FatJet_msoftdrop.push_back(sd_ak8.m());
     
     PseudoJet trimmed_ak8 = trimmer(j);
     FatJet_mtrim.push_back(trimmed_ak8.m());
     
+    // Energy correlation
     FatJet_n2b1.push_back(N2(sd_ak8));
     FatJet_n3b1.push_back(N3(sd_ak8));
-    FatJet_phi.push_back(j.phi_std());
-    FatJet_pt.push_back(j.pt());
+    
+    // Nsubjettiness, tau 
     FatJet_tau1.push_back(nSub1.result(j));
     FatJet_tau2.push_back(nSub2.result(j));
     FatJet_tau3.push_back(nSub3.result(j));
     FatJet_tau4.push_back(nSub4.result(j));
+    FatJet_tau21.push_back(nSub2.result(j)/nSub1.result(j));
+    FatJet_tau32.push_back(nSub3.result(j)/nSub2.result(j));
+    
+    // Jet momentum scaling, rho
+
+    
+    // SUEP jet selections 
+    //  highest track multiplicty
+    //  leading pT
   }
   
  // * 
@@ -799,7 +841,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     // For debugging: from https://github.com/Sam-Harper/usercode/blob/09e2252601da473ba02de966930863df57512438/TrigTools/plugins/L1MenuExample.cc
     //std::cout <<"l1 menu: name decisions prescale "<<std::endl;
-    //l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
+    l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
     //for(size_t bitNr=0;bitNr<l1GtUtils_->decisionsFinal().size();bitNr++){
     //const std::string& bitName = l1GtUtils_->decisionsFinal()[bitNr].first; // l1GtUtils.decisionsFinal() is of type std::vector<std::pair<std::string,bool> >
 
@@ -824,7 +866,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       bool l1htbit = 0;	
 			
       l1GtUtils_->getFinalDecisionByName(string(l1Seeds_[iseed]), l1htbit);
-      //cout<<string(l1Seeds_[iseed])<<"  "<<l1htbit<<endl;
+      cout<<string(l1Seeds_[iseed])<<"  "<<l1htbit<<endl;
       l1Result_.push_back( l1htbit );
       }
  }
@@ -834,9 +876,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	
 }
 
-void ScoutingNanoAOD::clearVars(){
-// Pretty sure this isn't called or does nothing
-}
 
 void ScoutingNanoAOD::beginJob() {
   
@@ -883,6 +922,35 @@ void ScoutingNanoAOD::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, ed
 }
 
 void ScoutingNanoAOD::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {
+}
+
+int ScoutingNanoAOD::getCharge(int pdgId) {
+  // following workbook 
+  if      (abs(pdgId) == 11 ) return 1; // electron
+  else if (abs(pdgId) == 13 ) return 1; // muon
+  else if (abs(pdgId) == 211) return 1; // pion
+  return 0;
+  // 130 = KLong - neutral hadron 
+  // 22 = photon 
+  // 1 = HF hadron, where HF means forward calo
+  // 2 = HF em particle, where HF means forward calo
+}
+bool ScoutingNanoAOD::jetID(const ScoutingPFJet &pfjet){
+// https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
+    
+    TLorentzVector jet; 
+    jet.SetPtEtaPhiM(pfjet.pt(), pfjet.eta(), pfjet.phi(), pfjet.m() );
+    
+    float NHF  = pfjet.neutralHadronEnergy()/jet.E();
+    float NEMF = pfjet.photonEnergy()/jet.E();
+    float CHF  = pfjet.chargedHadronEnergy()/jet.E();
+    float MUF  = pfjet.muonEnergy()/jet.E();
+    float CEMF = pfjet.electronEnergy()/jet.E();
+    float NumConst = pfjet.chargedHadronMultiplicity()+pfjet.neutralHadronMultiplicity()+pfjet.photonMultiplicity() + pfjet.electronMultiplicity() + pfjet.muonMultiplicity() + pfjet.HFHadronMultiplicity() + pfjet.HFEMMultiplicity();
+    float CHM      = pfjet.chargedHadronMultiplicity() +pfjet.electronMultiplicity() + pfjet.muonMultiplicity(); 
+    bool passID = (abs(pfjet.eta())<=2.6 && CEMF<0.8 && CHM>0 && CHF>0 && NumConst>1 && NEMF<0.9 && MUF <0.8 && NHF < 0.9 );
+
+    return passID;
 }
 
 void ScoutingNanoAOD::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

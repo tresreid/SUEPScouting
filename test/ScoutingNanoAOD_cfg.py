@@ -21,6 +21,12 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not to use the events weights from a Monte Carlo generator'
 )
+#params.register(
+#    'doJEC', 
+#    False, 
+#    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+#    'Flag to indicate whether or not to use the events weights from a Monte Carlo generator'
+#)
 
 params.register(
     'filterTrigger', 
@@ -62,14 +68,14 @@ params.register(
     '102X_upgrade2018_realistic_v15', 
     VarParsing.multiplicity.singleton,VarParsing.varType.string,
     'Process name for the HLT paths'
-)
+)# check this
 
 params.register(
     'xsec', 
     0.001, 
     VarParsing.multiplicity.singleton,VarParsing.varType.float,
     'Cross-section for a Monte Carlo Sample'
-)
+)#fix this
 params.register(
     'fileList', 
     'none', 
@@ -169,7 +175,7 @@ L1Info = ['L1_HTT200er','L1_HTT255er','L1_HTT280er','L1_HTT320er','L1_HTT360er',
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	
     	triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
-	doL1 = cms.bool(True),
+	doL1 = cms.bool(False),
         triggerConfiguration = cms.PSet(
     		hltResults            = cms.InputTag('TriggerResults','','HLT'),
     		l1tResults            = cms.InputTag(''),
@@ -192,6 +198,10 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     #pileupinfo       = cms.InputTag("addPileupInfo"),
     #geneventinfo     = cms.InputTag("generator"),
 
+    # for JEC corrections eventually
+    #L1corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L1FastJet_AK4CaloHLT.txt'),
+    #L2corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L2Relative_AK4CaloHLT.txt'),
+    #L3corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L3Absolute_AK4CaloHLT.txt'),
 )
 #process.Tracer = cms.Service("Tracer")
 

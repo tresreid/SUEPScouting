@@ -1,4 +1,4 @@
-To check out
+# To check out
 ```
 cmsrel CMSSW_11_1_0 #You can use 10_X_X too
 cd CMSSW_11_1_0/src
@@ -7,7 +7,25 @@ cd PhysicsTools
 git clone https://github.com/SUEPPhysics/ScoutingNanoAOD.git 
 ```
 
-To run 
+# To setup
+do this each time you login
+```
+cd src
+cmsenv
+voms-proxy-init
+```
+
+# To compile
+```
+cd src
+scram b
+```
+
+# To run 
 ```
 cmsRun ScoutingNanoAOD_cfg.py fileList=sample.txt outputFile=sample.root maxEvents=10
 ```
+
+# To do
+* jet energy corrections?
+* job submission
