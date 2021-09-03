@@ -29,6 +29,7 @@
 // Other relevant CMSSW includes
 #include "CommonTools/UtilAlgos/interface/TFileService.h" 
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
+#include "HLTrigger/HLTcore/interface/HLTPrescaleProvider.h"
 
 
 #include <memory>
@@ -109,17 +110,23 @@ private:
   virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
+<<<<<<< HEAD
   int getCharge(int pdgId);
   bool jetID(const ScoutingPFJet &pfjet);
 
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
+=======
+  virtual void clearVars();
+
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   const edm::EDGetTokenT<std::vector<ScoutingMuon> >        muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
+<<<<<<< HEAD
   const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
 
   std::vector<std::string> triggerPathsVector;
@@ -127,19 +134,56 @@ private:
 	
   bool doL1;       
   triggerExpression::Data triggerCache_;
+=======
+  
+
+  //const edm::EDGetTokenT<GenEventInfoProduct>             genEvtInfoToken;
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
       
-	
   // Generator-level information
   // Flags for the different types of triggers used in the analysis
   // For now we are interested in events passing either the single or double lepton triggers
-  unsigned char                trig;
+
+
+  // Trigger information 
        
-  edm::InputTag                algInputTag_;       
-  edm::EDGetToken              algToken_;
-  l1t::L1TGlobalUtil          *l1GtUtils_;
+  //edm::InputTag                algInputTag_;       
+  //edm::EDGetToken              algToken_;
+  //l1t::L1TGlobalUtil          *l1GtUtils_;
+  //triggerExpression::Data triggerCache_;
+  //std::vector<std::string> triggerPathsVector;
+  //std::map<std::string, int> triggerPathsMap;
+  //const edm::InputTag triggerResultsTag;
+  //const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
+  
+  bool doL1;       
+  
+  HLTPrescaleProvider hltPSProv_;
+  std::string hltProcess_; //name of HLT process, usually "HLT"
+
+  edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
+  edm::Handle<edm::TriggerResults> triggerBits;
+
   std::vector<std::string>     l1Seeds_;
+  std::vector<std::string>     hltSeeds_;
   std::vector<bool>            l1Result_;
+<<<<<<< HEAD
        
+=======
+  std::vector<int>             l1Prescale_;
+  std::vector<bool>            hltResult_;
+
+
+  // From Hardik
+  //std::vector<std::string> hltseedsvector;
+  //std::vector<pair<string,int>> hltbitmap;
+  //std::vector<pair<string,int>> hltprescalemap;
+      
+  //std::vector<std::string> l1seedsvector;
+  //std::vector<pair<string,int>> l1bitmap;
+  //std::vector<pair<string,int>> l1prescalemap;
+        
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   //Photon
   const static int 	max_pho = 1000;
   UInt_t n_pho;
@@ -282,10 +326,6 @@ private:
 };
 
 ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig): 
-  triggerResultsTag        (iConfig.getParameter<edm::InputTag>("triggerresults")),
-  triggerResultsToken      (consumes<edm::TriggerResults>                    (triggerResultsTag)),
-
-
   muonsToken               (consumes<std::vector<ScoutingMuon> >             (iConfig.getParameter<edm::InputTag>("muons"))), 
   electronsToken           (consumes<std::vector<ScoutingElectron> >         (iConfig.getParameter<edm::InputTag>("electrons"))), 
   photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
@@ -295,19 +335,28 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 //  pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
 //  gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
-  doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false)
+  doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
+  hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
+  hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
+  triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("bits"))),
+  l1Seeds_(iConfig.getParameter<std::vector<std::string> >("l1Seeds")),
+  hltSeeds_(iConfig.getParameter<std::vector<std::string> >("hltSeeds"))
+  //triggerResultsTag        (iConfig.getParameter<edm::InputTag>("triggerresults")),
+  // triggerResultsToken      (consumes<edm::TriggerResults>                    (triggerResultsTag)),
+
 {
+ // now do whatever initialization is needed
   usesResource("TFileService");
-  if (doL1) {
-    algInputTag_ = iConfig.getParameter<edm::InputTag>("AlgInputTag");
-    algToken_ = consumes<BXVector<GlobalAlgBlk>>(algInputTag_);
-    l1Seeds_ = iConfig.getParameter<std::vector<std::string> >("l1Seeds");
-    l1GtUtils_ = new l1t::L1TGlobalUtil(iConfig,consumesCollector());	
-  }
-  else {
-    l1Seeds_ = std::vector<std::string>();
-    l1GtUtils_ = 0;
-  }
+//  if (doL1) {
+//    //algInputTag_ = iConfig.getParameter<edm::InputTag>("AlgInputTag"); // might not need
+//    //algToken_ = consumes<BXVector<GlobalAlgBlk>>(algInputTag_); // might not need
+//    //l1GtUtils_ = new l1t::L1TGlobalUtil(iConfig,consumesCollector());	
+//  }
+//  else {
+//    l1Seeds_ = std::vector<std::string>();
+//    //l1GtUtils_ = 0;
+//  }
+//
 
  // Access the TFileService
   edm::Service<TFileService> fs;
@@ -321,8 +370,14 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("run"		, &run				 , "run/i" );
     
   // Triggers
+<<<<<<< HEAD
   tree->Branch("trig"                 ,&trig       , "trig/b");
   tree->Branch("l1Result"		      ,&l1Result_  );		
+=======
+  tree->Branch("hltResult"               ,&hltResult_   );              
+  tree->Branch("l1Result"		         ,&l1Result_	);		
+  tree->Branch("l1Prescale"		         ,&l1Prescale_  );		
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   //Electrons
   tree->Branch("n_ele"            	     ,&n_ele 			, "n_ele/i"		);
   tree->Branch("Electron_pt"             ,&Electron_pt 		 	    );
@@ -458,8 +513,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   using namespace fastjet::contrib;
     
   // Handles to the EDM content
-  edm::Handle<edm::TriggerResults> triggerResultsH;
-  iEvent.getByToken(triggerResultsToken, triggerResultsH);
+  //iEvent.getByToken(triggerBits_, triggerBits);
+
+  //edm::Handle<edm::TriggerResults> triggerResultsH;
+  //iEvent.getByToken(triggerResultsToken, triggerResultsH);
     
   Handle<vector<ScoutingElectron> > electronsH;
   iEvent.getByToken(electronsToken, electronsH);
@@ -484,16 +541,26 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 
   // Which triggers fired
-  for (size_t i = 0; i < triggerPathsVector.size(); i++) {
-    if (triggerPathsMap[triggerPathsVector[i]] == -1) continue;
-    if (i == 0  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=   1; // DST_L1DoubleMu_CaloScouting_PFScouting
-    if (i == 1  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=   2; // DST_DoubleMu3_Mass10_CaloScouting_PFScouting
-    if (i == 2  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=   4; // DST_ZeroBias_CaloScouting_PFScouting
-    if (i == 3  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=   8; // DST_L1HTT_CaloScouting_PFScouting
-    if (i == 4  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=  16; // DST_CaloJet40_CaloScouting_PFScouting
-    if (i == 5  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=  32; // DST_HT250_CaloScouting
-    if (i == 6  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig +=  64; // DST_HT410_PFScouting
-    if (i == 7  && triggerResultsH->accept(triggerPathsMap[triggerPathsVector[i]])) trig += 128; // DST_HT450_PFScouting
+  hltResult_.clear();
+
+  iEvent.getByToken(triggerBits_, triggerBits);
+
+  const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
+
+  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
+      const std::string& hltbitName = names.triggerName(i);
+      std::string hltpathName = hltbitName;
+      bool hltpassFinal = triggerBits->accept(i);
+
+      for(size_t i = 0; i < hltSeeds_.size(); i++){
+        TPRegexp pattern(hltSeeds_[i]);
+        if( TString(hltpathName).Contains(pattern)){
+          hltResult_.push_back(hltpassFinal);
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal << std::endl;
+        }
+      }
+      
+     
   }
   
 
@@ -836,22 +903,53 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
  // L1 info
  // *
  l1Result_.clear();
+ l1Prescale_.clear();
 
  if (doL1) {
 
+    //I seem to recall this function being slow so perhaps cache for a given lumi 
+    //(it only changes on lumi boundaries)  
+    //note to the reader, what I'm doing is extremely dangerious (a const cast), never do this!                                     
+    //however in this narrow case, it fixes a bug in l1t::L1TGlobalUtil (the method should be const)                                
+    //and it is safe for this specific instance                                                                                     
+    l1t::L1TGlobalUtil& l1GtUtils = const_cast<l1t::L1TGlobalUtil&> (hltPSProv_.l1tGlobalUtil());
+
+
     // For debugging: from https://github.com/Sam-Harper/usercode/blob/09e2252601da473ba02de966930863df57512438/TrigTools/plugins/L1MenuExample.cc
+<<<<<<< HEAD
     //std::cout <<"l1 menu: name decisions prescale "<<std::endl;
     l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
     //for(size_t bitNr=0;bitNr<l1GtUtils_->decisionsFinal().size();bitNr++){
     //const std::string& bitName = l1GtUtils_->decisionsFinal()[bitNr].first; // l1GtUtils.decisionsFinal() is of type std::vector<std::pair<std::string,bool> >
+=======
+    std::cout <<"l1 menu: name decisions prescale "<<std::endl;
 
-    //bool passInitial = l1GtUtils_->decisionsInitial()[bitNr].second; //before masks and prescales, so if we have a 15 GeV electron passing L1_SingleEG10, it will show up as true but will likely not cause a L1 acccept due to the seeds high prescale
-    //bool passInterm = l1GtUtils_->decisionsInterm()[bitNr].second; //after mask (?, unsure what this is)
-    //bool passFinal = l1GtUtils_->decisionsFinal()[bitNr].second; //after masks & prescales, true means it gives a L1 accept to the HLT
-    //int prescale = l1GtUtils_->prescales()[bitNr].second;
-    //std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
-    //}
+    for(size_t bitNr=0;bitNr<l1GtUtils.decisionsFinal().size();bitNr++){
+        const std::string& bitName = l1GtUtils.decisionsFinal()[bitNr].first; // l1GtUtils.decisionsFinal() is of type std::vector<std::pair<std::string,bool> >
+        bool passInitial = l1GtUtils.decisionsInitial()[bitNr].second; //before masks and prescales, so if we have a 15 GeV electron passing L1_SingleEG10, it will show up as true but will likely not cause a L1 acccept due to the seeds high prescale
+        bool passInterm = l1GtUtils.decisionsInterm()[bitNr].second; //after mask (?, unsure what this is)
+        bool passFinal = l1GtUtils.decisionsFinal()[bitNr].second; //after masks & prescales, true means it gives a L1 accept to the HLT
+        int prescale = l1GtUtils.prescales()[bitNr].second;
+        std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
+        //if (passFinal) std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
+        for(size_t i = 0; i < l1Seeds_.size(); i++){
+          std::string l1Name = l1Seeds_[i];
+          std::string pathName = bitName;
+          if(bitName.find(l1Name) != std::string::npos ){
+             //l1bitmap.push_back(std::make_pair(l1seedsvector[i],passFinal));
+             //l1prescalemap.push_back(std::make_pair(l1seedsvector[i],prescale));
+             l1Result_  .push_back(passFinal);
+             l1Prescale_.push_back(prescale);
+          }
+        }
+    }
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
 
+
+    // Abhijith method
+    // Need this! 
+    //l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
+    //
     // not sure what this is for...
     /*	for( int r = 99; r<280; r++){
 	string name ("empty");
@@ -862,6 +960,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	}*/
 
     // Seems like L1 trigger info is messed up...? 
+<<<<<<< HEAD
     for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
       bool l1htbit = 0;	
 			
@@ -869,6 +968,16 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       cout<<string(l1Seeds_[iseed])<<"  "<<l1htbit<<endl;
       l1Result_.push_back( l1htbit );
       }
+=======
+    //std::cout << "name decision" << std::endl;
+    //for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
+    //  bool l1htbit = 0;	
+	//		
+    //  l1GtUtils_->getFinalDecisionByName(string(l1Seeds_[iseed]), l1htbit);
+    //  std::cout<<l1Seeds_[iseed]<<"  "<<l1htbit<<std::endl;
+    //  l1Result_.push_back( l1htbit );
+    //  }
+>>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
  }
 
 
@@ -885,34 +994,44 @@ void ScoutingNanoAOD::endJob() {
 }
 
 void ScoutingNanoAOD::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
-  // HLT paths
 
-  triggerPathsVector.push_back("DST_DoubleMu1_noVtx_CaloScouting_v*");
-  triggerPathsVector.push_back("DST_DoubleMu3_noVtx_CaloScouting_v*");
-  triggerPathsVector.push_back("DST_DoubleMu3_noVtx_Mass10_PFScouting_v*");
-  triggerPathsVector.push_back("DST_L1HTT_CaloScouting_PFScouting_v*");
-  triggerPathsVector.push_back("DST_CaloJet40_CaloScouting_PFScouting_v*");
-  triggerPathsVector.push_back("DST_HT250_CaloScouting_v*");
-  triggerPathsVector.push_back("DST_HT410_PFScouting_v*");
-  triggerPathsVector.push_back("DST_HT450_PFScouting_v*");
+  //triggerPathsVector.push_back("DST_DoubleMu1_noVtx_CaloScouting_v*");
+  //triggerPathsVector.push_back("DST_DoubleMu3_noVtx_CaloScouting_v*");
+  //triggerPathsVector.push_back("DST_DoubleMu3_noVtx_Mass10_PFScouting_v*");
+  //triggerPathsVector.push_back("DST_L1HTT_CaloScouting_PFScouting_v*");
+  //triggerPathsVector.push_back("DST_CaloJet40_CaloScouting_PFScouting_v*");
+  //triggerPathsVector.push_back("DST_HT250_CaloScouting_v*");
+  //triggerPathsVector.push_back("DST_HT410_PFScouting_v*");
+  //triggerPathsVector.push_back("DST_HT450_PFScouting_v*");
 
-  HLTConfigProvider hltConfig;
-  bool changedConfig = false;
-  hltConfig.init(iRun, iSetup, triggerResultsTag.process(), changedConfig);
+  //we need to initalise the menu each run (menu can and will change on run boundaries)           
+  //HLTConfigProvider hltConfig;
+  //bool changedConfig = false;
+  //hltConfig.init(iRun, iSetup, triggerResultsTag.process(), changedConfig);
 
-  for (size_t i = 0; i < triggerPathsVector.size(); i++) {
-    triggerPathsMap[triggerPathsVector[i]] = -1;
-  }
+  //for (size_t i = 0; i < triggerPathsVector.size(); i++) {
+  //  triggerPathsMap[triggerPathsVector[i]] = -1;
+  //}
 
-  for(size_t i = 0; i < triggerPathsVector.size(); i++){
-    TPRegexp pattern(triggerPathsVector[i]);
-    for(size_t j = 0; j < hltConfig.triggerNames().size(); j++){
-      std::string pathName = hltConfig.triggerNames()[j];
-      if(TString(pathName).Contains(pattern)){
-	triggerPathsMap[triggerPathsVector[i]] = j;
-      }
-    }
-  }
+  //for(size_t i = 0; i < triggerPathsVector.size(); i++){
+  //  TPRegexp pattern(triggerPathsVector[i]);
+  //  for(size_t j = 0; j < hltConfig.triggerNames().size(); j++){
+  //    std::string pathName = hltConfig.triggerNames()[j];
+  //    if(TString(pathName).Contains(pattern)){
+  //  triggerPathsMap[triggerPathsVector[i]] = j;
+  //    }
+  //  }
+  //}
+
+
+  //we need to initalise the menu each run (menu can and will change on run boundaries)           
+  //for L1
+  bool changed=false;
+  hltPSProv_.init(iRun,iSetup,hltProcess_,changed);
+  const l1t::L1TGlobalUtil& l1GtUtils = hltPSProv_.l1tGlobalUtil();
+  std::cout <<"l1 menu "<<l1GtUtils.gtTriggerMenuName()<<" version "<<l1GtUtils.gtTriggerMenuVersion()<<" comment "<<std::endl;
+  std::cout <<"hlt name "<<hltPSProv_.hltConfigProvider().tableName()<<std::endl;
+
 }
 
 void ScoutingNanoAOD::endRun(edm::Run const&, edm::EventSetup const&) {
