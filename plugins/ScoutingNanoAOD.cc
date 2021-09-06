@@ -110,35 +110,23 @@ private:
   virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-<<<<<<< HEAD
   int getCharge(int pdgId);
   bool jetID(const ScoutingPFJet &pfjet);
 
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
-=======
-  virtual void clearVars();
-
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   const edm::EDGetTokenT<std::vector<ScoutingMuon> >        muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
-<<<<<<< HEAD
-  const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
+  //const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
 	
-  bool doL1;       
-  triggerExpression::Data triggerCache_;
-=======
   
-
-  //const edm::EDGetTokenT<GenEventInfoProduct>             genEvtInfoToken;
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
       
   // Generator-level information
   // Flags for the different types of triggers used in the analysis
@@ -147,6 +135,7 @@ private:
 
   // Trigger information 
        
+  bool doL1;       
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -156,7 +145,6 @@ private:
   //const edm::InputTag triggerResultsTag;
   //const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
   
-  bool doL1;       
   
   HLTPrescaleProvider hltPSProv_;
   std::string hltProcess_; //name of HLT process, usually "HLT"
@@ -167,23 +155,9 @@ private:
   std::vector<std::string>     l1Seeds_;
   std::vector<std::string>     hltSeeds_;
   std::vector<bool>            l1Result_;
-<<<<<<< HEAD
-       
-=======
   std::vector<int>             l1Prescale_;
   std::vector<bool>            hltResult_;
 
-
-  // From Hardik
-  //std::vector<std::string> hltseedsvector;
-  //std::vector<pair<string,int>> hltbitmap;
-  //std::vector<pair<string,int>> hltprescalemap;
-      
-  //std::vector<std::string> l1seedsvector;
-  //std::vector<pair<string,int>> l1bitmap;
-  //std::vector<pair<string,int>> l1prescalemap;
-        
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   //Photon
   const static int 	max_pho = 1000;
   UInt_t n_pho;
@@ -370,14 +344,9 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("run"		, &run				 , "run/i" );
     
   // Triggers
-<<<<<<< HEAD
-  tree->Branch("trig"                 ,&trig       , "trig/b");
-  tree->Branch("l1Result"		      ,&l1Result_  );		
-=======
   tree->Branch("hltResult"               ,&hltResult_   );              
   tree->Branch("l1Result"		         ,&l1Result_	);		
   tree->Branch("l1Prescale"		         ,&l1Prescale_  );		
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
   //Electrons
   tree->Branch("n_ele"            	     ,&n_ele 			, "n_ele/i"		);
   tree->Branch("Electron_pt"             ,&Electron_pt 		 	    );
@@ -916,12 +885,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 
     // For debugging: from https://github.com/Sam-Harper/usercode/blob/09e2252601da473ba02de966930863df57512438/TrigTools/plugins/L1MenuExample.cc
-<<<<<<< HEAD
-    //std::cout <<"l1 menu: name decisions prescale "<<std::endl;
-    l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
-    //for(size_t bitNr=0;bitNr<l1GtUtils_->decisionsFinal().size();bitNr++){
-    //const std::string& bitName = l1GtUtils_->decisionsFinal()[bitNr].first; // l1GtUtils.decisionsFinal() is of type std::vector<std::pair<std::string,bool> >
-=======
     std::cout <<"l1 menu: name decisions prescale "<<std::endl;
 
     for(size_t bitNr=0;bitNr<l1GtUtils.decisionsFinal().size();bitNr++){
@@ -943,7 +906,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
           }
         }
     }
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
 
 
     // Abhijith method
@@ -959,16 +921,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	cout << "L1 bit number = " << r << " ; L1 bit name = " << name << endl;
 	}*/
 
-    // Seems like L1 trigger info is messed up...? 
-<<<<<<< HEAD
-    for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
-      bool l1htbit = 0;	
-			
-      l1GtUtils_->getFinalDecisionByName(string(l1Seeds_[iseed]), l1htbit);
-      cout<<string(l1Seeds_[iseed])<<"  "<<l1htbit<<endl;
-      l1Result_.push_back( l1htbit );
-      }
-=======
     //std::cout << "name decision" << std::endl;
     //for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
     //  bool l1htbit = 0;	
@@ -977,7 +929,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     //  std::cout<<l1Seeds_[iseed]<<"  "<<l1htbit<<std::endl;
     //  l1Result_.push_back( l1htbit );
     //  }
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
  }
 
 

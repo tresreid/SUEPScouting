@@ -195,49 +195,33 @@ L1Info = [
 
 # Make tree
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
-	
-<<<<<<< HEAD
-    	triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
 	doL1 = cms.bool(False),
-        triggerConfiguration = cms.PSet(
-    		hltResults            = cms.InputTag('TriggerResults','','HLT'),
-    		l1tResults            = cms.InputTag(''),
-    		daqPartitions         = cms.uint32(1),
-    		l1tIgnoreMaskAndPrescale = cms.bool(False),
-    		throw                 = cms.bool(False)
-  	),
-	ReadPrescalesFromFile = cms.bool( False ),
-        AlgInputTag = cms.InputTag("gtStage2Digis"),
-        l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
-        l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
-                                l1Seeds           = cms.vstring(L1Info),
-=======
+    stageL1Trigger   = cms.uint32(2),
+
     hltProcess=cms.string("HLT"),
     bits          = cms.InputTag("TriggerResults", "", "HLT"),
-	doL1 = cms.bool(True),
     
-    #	triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
-    #    triggerConfiguration = cms.PSet(
-    #		hltResults            = cms.InputTag('TriggerResults','','HLT'),
-    #		l1tResults            = cms.InputTag(''),
-    #		daqPartitions         = cms.uint32(1),
-    #		l1tIgnoreMaskAndPrescale = cms.bool(False),
-    #		throw                 = cms.bool(False)
-  	#),
-	#ReadPrescalesFromFile = cms.bool( False ),
+    triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
+    triggerConfiguration = cms.PSet(
+    	hltResults            = cms.InputTag('TriggerResults','','HLT'),
+    	l1tResults            = cms.InputTag(''),
+    	daqPartitions         = cms.uint32(1),
+    	l1tIgnoreMaskAndPrescale = cms.bool(False),
+    	throw                 = cms.bool(False)
+  	),
+	ReadPrescalesFromFile = cms.bool( False ),
     AlgInputTag = cms.InputTag("gtStage2Digis"),
     l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
     l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
     l1Seeds           = cms.vstring(L1Info),
     hltSeeds          = cms.vstring(HLTInfo),
->>>>>>> 19afaa0384fc4f879b8d4f223925d54162886ccb
-	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
 	muons            = cms.InputTag("hltScoutingMuonPacker"),
 	electrons        = cms.InputTag("hltScoutingEgammaPacker"),
     photons          = cms.InputTag("hltScoutingEgammaPacker"),
 	pfcands          = cms.InputTag("hltScoutingPFPacker"),
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
     vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
     #pileupinfo       = cms.InputTag("addPileupInfo"),
     #geneventinfo     = cms.InputTag("generator"),
 
