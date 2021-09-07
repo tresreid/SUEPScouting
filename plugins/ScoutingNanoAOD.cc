@@ -90,6 +90,11 @@
 #include "fastjet/JadePlugin.hh"
 #include "fastjet/contrib/SoftKiller.hh"
 
+#include "PhysicsTools/CandUtils/interface/EventShapeVariables.h"
+#include "PhysicsTools/CandUtils/interface/Thrust.h"
+
+
+
 using namespace std;
 
 
@@ -159,7 +164,6 @@ private:
   std::vector<bool>            hltResult_;
 
   //Photon
-  const static int 	max_pho = 1000;
   UInt_t n_pho;
   vector<Float16_t> 	    Photon_pt;
   vector<Float16_t>        	Photon_eta;
@@ -171,7 +175,6 @@ private:
   vector<Float16_t>	    	Photon_hcaliso;
 
   //Electron
-  const static int 	max_ele = 1000;
   UInt_t n_ele;
   vector<Float16_t> 	Electron_pt;
   vector<Float16_t>     Electron_eta;
@@ -289,6 +292,23 @@ private:
   vector<Float16_t> Vertex_chi2;
   vector<Float16_t> Vertex_ndof;
   vector<Float16_t> Vertex_isValidVtx;
+
+  // Event shape variables
+  float event_isotropy;
+  float event_circularity;
+  float event_sphericity;
+  float event_thrust; // need to save actual reco objects for thrust
+  
+  float suepJet_isotropy;
+  float suepJet_circularity;
+  float suepJet_sphericity;
+  float suepJet_thrust;
+
+  float eventBoosted_isotropy;
+  float eventBoosted_circularity;
+  float eventBoosted_sphericity;
+  float eventBoosted_thrust;
+
         
   // TTree carrying the event weight information
   TTree* tree;
@@ -466,7 +486,21 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("FatJet_msoftdrop"   ,&FatJet_msoftdrop);
   tree->Branch("FatJet_mtrim"       ,&FatJet_mtrim    );
   tree->Branch("FatJet_nconst"      ,&FatJet_nconst   );
+
+  tree->Branch("event_isotropy"        ,&event_isotropy     );
+  tree->Branch("event_circularity"     ,&event_circularity  );
+  tree->Branch("event_sphericity"      ,&event_sphericity   );
+  tree->Branch("event_thrust"          ,&event_thrust       );
   
+  tree->Branch("suepJet_isotropy"        ,&suepJet_isotropy     );
+  tree->Branch("suepJet_circularity"     ,&suepJet_circularity  );
+  tree->Branch("suepJet_sphericity"      ,&suepJet_sphericity   );
+  tree->Branch("suepJet_thrust"          ,&suepJet_thrust       );
+
+  tree->Branch("eventBoosted_isotropy"        ,&eventBoosted_isotropy     );
+  tree->Branch("eventBoosted_circularity"     ,&eventBoosted_circularity  );
+  tree->Branch("eventBoosted_sphericity"      ,&eventBoosted_sphericity   );
+  tree->Branch("eventBoosted_thrust"          ,&eventBoosted_thrust       );
 
 }
 
@@ -630,6 +664,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   PFcand_pdgid.clear();
   PFcand_vertex.clear();
   vector<PseudoJet> fj_part;
+  vector<math::XYZVector> event_tracks; // all event tracks
+  math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
   for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())));
@@ -642,13 +678,20 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     // Cluster charged PF candidates into fat jets
     if (pfcands_iter->vertex() != 0) continue;
     if (abs(pfcands_iter->eta()) >= 2.4 ) continue;
-    if (pfcands_iter->pt() < 1) continue; 
+    if (pfcands_iter->pt() < 1.) continue; 
     if (getCharge(pfcands_iter->pdgId()) == 0 ) continue;
 
+    // For clustering fat jets
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
     temp_jet.reset_PtYPhiM(pfcands_iter->pt(), pfcands_iter->eta(), pfcands_iter->phi(), pfcands_iter->m());
     temp_jet.set_user_index(pfcands_iter->pdgId());
     fj_part.push_back(temp_jet);
+    
+    // Event shape variables on whole event
+    trk = math::XYZVector(0,0,0);
+    trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
+    event_tracks.push_back(trk);
+    
 
     n_pfcand++;
   } 
@@ -789,7 +832,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     if ( passJetId == false ) continue; 
     ht += pfjet->pt() ; 
     n_jetId++ ; 
+
   }
+  // loop through constituents & save
 
   // * 
   // FatJets 
@@ -831,7 +876,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   fastjet::AreaDefinition area_def(fastjet::active_area, area_spec);
 
   ClusterSequenceArea ak15_cs(fj_part, ak15_def, area_def);
-  vector<PseudoJet> ak15_jets = sorted_by_pt(ak15_cs.inclusive_jets(100.0));
+  vector<PseudoJet> ak15_jets = sorted_by_pt(ak15_cs.inclusive_jets(30.0)); //pt min
+
+  unsigned int maxNconstit=0;
+  PseudoJet suepJet = PseudoJet(0, 0, 0, 0);
 
   for(auto &j: ak15_jets) {
     FatJet_area.push_back(j.area());
@@ -863,10 +911,57 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     // Jet momentum scaling, rho
 
     
-    // SUEP jet selections 
-    //  highest track multiplicty
-    //  leading pT
+    // SUEP select the highest track multiplicty jet as the SUEP jet
+    if ( j.constituents().size() > maxNconstit) 
+    {
+        maxNconstit = j.constituents().size();
+        suepJet = j;
+    }
   }
+
+ // done for all events, no need to reset?
+ EventShapeVariables event_algo(event_tracks);
+ event_isotropy    = event_algo.isotropy();
+ event_sphericity  = event_algo.sphericity();
+ event_circularity = event_algo.circularity();
+
+ // done for suep jet (not boosted)
+ vector<math::XYZVector> suep_tracks; // tracks associated to highest multplicity jet
+ if (maxNconstit > 0 ){
+    for (auto suep_trk : suepJet.constituents() ){
+       trk = math::XYZVector(0,0,0);
+       trk.SetXYZ(suep_trk.px(), suep_trk.py(), suep_trk.pz() );
+       suep_tracks.push_back(trk);
+    }
+ }
+ EventShapeVariables suep_algo(suep_tracks);
+ suepJet_isotropy    = suep_algo.isotropy();
+ suepJet_sphericity  = suep_algo.sphericity();
+ suepJet_circularity = suep_algo.circularity();
+ 
+ // done for event, after boosting & removing ISR w/in delta phi
+ vector<math::XYZVector> boost_tracks; // after boost with deltaphi removal 
+ if (maxNconstit > 0) {
+    TLorentzVector suep_p4 = TLorentzVector();
+    suep_p4.SetPtEtaPhiM(suepJet.pt(), suepJet.eta(), suepJet.phi_std(), suepJet.m());
+    TVector3 boost_pt = suep_p4.BoostVector();
+    for (auto evt_trk : fj_part ){
+
+        TLorentzVector trk_p4 = TLorentzVector();
+        trk_p4.SetPtEtaPhiM( evt_trk.pt(), evt_trk.eta(), evt_trk.phi_std(), evt_trk.m());
+        trk_p4.Boost(-boost_pt);
+        
+        // christos requires dPhi(trk_p4,ISR candidate)
+        // trying this because not sure we should require two fat jets?
+        if ( abs(trk_p4.DeltaPhi(-suep_p4) ) < 1.6 ) continue;
+        trk.SetXYZ(evt_trk.px(), evt_trk.py(), evt_trk.pz() );
+        boost_tracks.push_back(trk);
+    }
+ }
+ EventShapeVariables boost_algo(boost_tracks);
+ eventBoosted_isotropy    = boost_algo.isotropy();
+ eventBoosted_sphericity  = boost_algo.sphericity();
+ eventBoosted_circularity = boost_algo.circularity();
   
  // * 
  // L1 info
@@ -878,11 +973,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     //I seem to recall this function being slow so perhaps cache for a given lumi 
     //(it only changes on lumi boundaries)  
-    //note to the reader, what I'm doing is extremely dangerious (a const cast), never do this!                                     
-    //however in this narrow case, it fixes a bug in l1t::L1TGlobalUtil (the method should be const)                                
+    //note to the reader, what I'm doing is extremely dangerious (a const cast), never do this!           
+    //however in this narrow case, it fixes a bug in l1t::L1TGlobalUtil (the method should be const)          
     //and it is safe for this specific instance                                                                                     
     l1t::L1TGlobalUtil& l1GtUtils = const_cast<l1t::L1TGlobalUtil&> (hltPSProv_.l1tGlobalUtil());
-
 
     // For debugging: from https://github.com/Sam-Harper/usercode/blob/09e2252601da473ba02de966930863df57512438/TrigTools/plugins/L1MenuExample.cc
     std::cout <<"l1 menu: name decisions prescale "<<std::endl;
@@ -894,7 +988,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         bool passFinal = l1GtUtils.decisionsFinal()[bitNr].second; //after masks & prescales, true means it gives a L1 accept to the HLT
         int prescale = l1GtUtils.prescales()[bitNr].second;
         std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
-        //if (passFinal) std::cout <<"   "<<bitNr<<" "<<bitName<<" "<<passInitial<<" "<<passInterm<<" "<<passFinal<<" "<<prescale<<std::endl;
         for(size_t i = 0; i < l1Seeds_.size(); i++){
           std::string l1Name = l1Seeds_[i];
           std::string pathName = bitName;
@@ -908,27 +1001,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     }
 
 
-    // Abhijith method
-    // Need this! 
-    //l1GtUtils_->retrieveL1(iEvent,iSetup,algToken_);
-    //
-    // not sure what this is for...
-    /*	for( int r = 99; r<280; r++){
-	string name ("empty");
-	bool algoName_ = false;
-	algoName_ = l1GtUtils_->getAlgNameFromBit(r,name);
-	cout << "getAlgNameFromBit = " << algoName_  << endl;
-	cout << "L1 bit number = " << r << " ; L1 bit name = " << name << endl;
-	}*/
-
-    //std::cout << "name decision" << std::endl;
-    //for( unsigned int iseed = 0; iseed < l1Seeds_.size(); iseed++ ) {
-    //  bool l1htbit = 0;	
-	//		
-    //  l1GtUtils_->getFinalDecisionByName(string(l1Seeds_[iseed]), l1htbit);
-    //  std::cout<<l1Seeds_[iseed]<<"  "<<l1htbit<<std::endl;
-    //  l1Result_.push_back( l1htbit );
-    //  }
  }
 
 

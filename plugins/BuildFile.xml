@@ -9,4 +9,5 @@
 <use name="fastjet"/>
 <use name="fastjet-contrib"/>
 <use name="root"/>
+<use name="PhysicsTools/CandUtils"/>
 <flags EDM_PLUGIN="1"/>
