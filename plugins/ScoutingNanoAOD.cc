@@ -568,8 +568,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   
 
   // *
-  // Electrons here
+  // Electrons here, also electrons are not contained in pf candidate collection. need to merge them explicitly
   // *
+
   Electron_pt.clear();
   Electron_eta.clear();
   Electron_phi.clear();
@@ -587,6 +588,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Electron_hcaliso.clear();
   Electron_tkiso.clear();
   n_ele = 0;
+
+  vector<Run3ScoutingParticle> PFcands;
+
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
       Electron_pt.push_back(electrons_iter->pt());
@@ -604,6 +608,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       Electron_ecaliso.push_back(electrons_iter->ecalIso());
       Electron_hcaliso.push_back(electrons_iter->hcalIso());
       n_ele++;
+
+      Run3ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
+      PFcands.push_back(tmp);
     }
 
   // *
@@ -657,34 +664,47 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // * 
   // Particle Flow candidates 
   // *
-  PFcand_pt.clear();
-  PFcand_eta.clear();
-  PFcand_phi.clear();
-  PFcand_m.clear();
-  PFcand_pdgid.clear();
-  PFcand_vertex.clear();
+
+
+    for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
+      Run3ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
+    
+      PFcands.push_back(tmp);
+    }
+
+    //sort PFcands according to pT
+    struct {
+      bool operator()(Run3ScoutingParticle a, Run3ScoutingParticle b) const { return a.pt() > b.pt(); }
+    } custompT;
+
+    std::sort(PFcands.begin(), PFcands.end(), custompT);
+
+
+
+
+
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
   math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
-  for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
-    PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())));
-    PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())));
-    PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())));
-    PFcand_m.push_back(pfcands_iter->m());
-    PFcand_pdgid.push_back(pfcands_iter->pdgId());
-    PFcand_vertex.push_back(pfcands_iter->vertex());
+  for (auto & pfcands_iter : PFcands ) {
+    PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
+    PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
+    PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+    PFcand_m.push_back(pfcands_iter.m());
+    PFcand_pdgid.push_back(pfcands_iter.pdgId());
+    PFcand_vertex.push_back(pfcands_iter.vertex());
 
     // Cluster charged PF candidates into fat jets
-    if (pfcands_iter->vertex() != 0) continue;
-    if (abs(pfcands_iter->eta()) >= 2.4 ) continue;
-    if (pfcands_iter->pt() < 1.) continue; 
-    if (getCharge(pfcands_iter->pdgId()) == 0 ) continue;
+    if (pfcands_iter.vertex() != 0) continue;
+    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+    if (pfcands_iter.pt() < 1.) continue; 
+    if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
 
     // For clustering fat jets
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
-    temp_jet.reset_PtYPhiM(pfcands_iter->pt(), pfcands_iter->eta(), pfcands_iter->phi(), pfcands_iter->m());
-    temp_jet.set_user_index(pfcands_iter->pdgId());
+    temp_jet.reset_PtYPhiM(pfcands_iter.pt(), pfcands_iter.eta(), pfcands_iter.phi(), pfcands_iter.m());
+    temp_jet.set_user_index(n_pfcand);
     fj_part.push_back(temp_jet);
     
     // Event shape variables on whole event
@@ -692,7 +712,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
     event_tracks.push_back(trk);
     
-
     n_pfcand++;
   } 
 
