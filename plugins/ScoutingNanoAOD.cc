@@ -590,7 +590,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Electron_tkiso.clear();
   n_ele = 0;
 
-  vector<Run3ScoutingParticle> PFcands;
+  vector<ScoutingParticle> PFcands;
 
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
@@ -610,7 +610,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       Electron_hcaliso.push_back(electrons_iter->hcalIso());
       n_ele++;
 
-      Run3ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
+      ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
       PFcands.push_back(tmp);
     }
 
@@ -668,14 +668,14 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
-      Run3ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
+      ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
       PFcands.push_back(tmp);
     }
 
     //sort PFcands according to pT
     struct {
-      bool operator()(Run3ScoutingParticle a, Run3ScoutingParticle b) const { return a.pt() > b.pt(); }
+      bool operator()(ScoutingParticle a, ScoutingParticle b) const { return a.pt() > b.pt(); }
     } custompT;
 
     std::sort(PFcands.begin(), PFcands.end(), custompT);
