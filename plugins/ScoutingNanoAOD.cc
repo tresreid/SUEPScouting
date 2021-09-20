@@ -470,6 +470,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
   tree->Branch("Jet_passId"           ,&Jet_passId 		 );
   
+  tree->Branch("n_fatjet"           ,&n_fatjet 	 , "n_fatjet/i"	  );
   tree->Branch("FatJet_area"        ,&FatJet_area   );
   tree->Branch("FatJet_eta"         ,&FatJet_eta    );
   tree->Branch("FatJet_n2b1"        ,&FatJet_n2b1   );
