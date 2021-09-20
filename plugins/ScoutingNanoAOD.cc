@@ -937,6 +937,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         maxNconstit = j.constituents().size();
         suepJet = j;
     }
+    n_fatjet++;
   }
 
  // done for all events, no need to reset?
