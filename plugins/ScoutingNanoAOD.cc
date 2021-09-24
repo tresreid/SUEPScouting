@@ -262,7 +262,17 @@ private:
   vector<Float16_t> PFcand_phi;
   vector<Float16_t>	PFcand_m;
   vector<Float16_t>	PFcand_pdgid;
+  vector<Float16_t>	PFcand_q;
   vector<Float16_t>	PFcand_vertex;
+
+  //bPFCand
+  UInt_t n_bpfcand;
+  vector<Float16_t> bPFcand_pt;
+  vector<Float16_t> bPFcand_eta;
+  vector<Float16_t> bPFcand_phi;
+  vector<Float16_t>	bPFcand_m;
+  vector<Float16_t>	bPFcand_pdgid;
+  vector<Float16_t>	bPFcand_vertex;
 
   // Fatjets 
   UInt_t n_fatjet;
@@ -399,7 +409,17 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("PFcand_phi"            	   ,&PFcand_phi		 );
   tree->Branch("PFcand_m"            	   ,&PFcand_m 		 );
   tree->Branch("PFcand_pdgid"              ,&PFcand_pdgid	 );
+  tree->Branch("PFcand_q"              ,&PFcand_q	 );
   tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
+
+
+  tree->Branch("n_bpfcand"            	   ,&n_bpfcand 		,"n_bpfcand/i"		);	
+  tree->Branch("bPFcand_pt"        	       ,&bPFcand_pt 		 );
+  tree->Branch("bPFcand_eta"            	   ,&bPFcand_eta 	 );
+  tree->Branch("bPFcand_phi"            	   ,&bPFcand_phi		 );
+  tree->Branch("bPFcand_m"            	   ,&bPFcand_m 		 );
+  tree->Branch("bPFcand_pdgid"              ,&bPFcand_pdgid	 );
+  tree->Branch("bPFcand_vertex"             ,&bPFcand_vertex 	 );
 
   tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
   tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
@@ -470,6 +490,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
   tree->Branch("Jet_passId"           ,&Jet_passId 		 );
   
+  tree->Branch("n_fatjet"           ,&n_fatjet 	 , "n_fatjet/i"	  );
   tree->Branch("FatJet_area"        ,&FatJet_area   );
   tree->Branch("FatJet_eta"         ,&FatJet_eta    );
   tree->Branch("FatJet_n2b1"        ,&FatJet_n2b1   );
@@ -589,7 +610,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Electron_tkiso.clear();
   n_ele = 0;
 
-  vector<Run3ScoutingParticle> PFcands;
+  vector<ScoutingParticle> PFcands;
 
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
@@ -609,7 +630,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       Electron_hcaliso.push_back(electrons_iter->hcalIso());
       n_ele++;
 
-      Run3ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
+      ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
       PFcands.push_back(tmp);
     }
 
@@ -667,20 +688,17 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
-      Run3ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
+      ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
       PFcands.push_back(tmp);
     }
 
     //sort PFcands according to pT
     struct {
-      bool operator()(Run3ScoutingParticle a, Run3ScoutingParticle b) const { return a.pt() > b.pt(); }
+      bool operator()(ScoutingParticle a, ScoutingParticle b) const { return a.pt() > b.pt(); }
     } custompT;
 
     std::sort(PFcands.begin(), PFcands.end(), custompT);
-
-
-
 
 
   vector<PseudoJet> fj_part;
@@ -688,30 +706,31 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
   for (auto & pfcands_iter : PFcands ) {
+    if (pfcands_iter.pt() < 1.) continue;
+    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
     PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
     PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
     PFcand_m.push_back(pfcands_iter.m());
     PFcand_pdgid.push_back(pfcands_iter.pdgId());
+    PFcand_q.push_back(getCharge(pfcands_iter.pdgId()));
     PFcand_vertex.push_back(pfcands_iter.vertex());
 
     // Cluster charged PF candidates into fat jets
-    if (pfcands_iter.vertex() != 0) continue;
-    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
-    if (pfcands_iter.pt() < 1.) continue; 
-    if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
-
     // For clustering fat jets
     PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
     temp_jet.reset_PtYPhiM(pfcands_iter.pt(), pfcands_iter.eta(), pfcands_iter.phi(), pfcands_iter.m());
     temp_jet.set_user_index(n_pfcand);
-    fj_part.push_back(temp_jet);
+    if (pfcands_iter.vertex() == 0 && getCharge(pfcands_iter.pdgId()) != 0 ){
+      fj_part.push_back(temp_jet);
     
-    // Event shape variables on whole event
-    trk = math::XYZVector(0,0,0);
-    trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
-    event_tracks.push_back(trk);
-    
+      // Event shape variables on whole event
+      trk = math::XYZVector(0,0,0);
+      trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
+      event_tracks.push_back(trk);
+    }
+
     n_pfcand++;
   } 
 
@@ -936,6 +955,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         maxNconstit = j.constituents().size();
         suepJet = j;
     }
+    n_fatjet++;
   }
 
  // done for all events, no need to reset?
@@ -957,6 +977,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
  suepJet_isotropy    = suep_algo.isotropy();
  suepJet_sphericity  = suep_algo.sphericity();
  suepJet_circularity = suep_algo.circularity();
+
  
  // done for event, after boosting & removing ISR w/in delta phi
  vector<math::XYZVector> boost_tracks; // after boost with deltaphi removal 
@@ -981,6 +1002,37 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
  eventBoosted_isotropy    = boost_algo.isotropy();
  eventBoosted_sphericity  = boost_algo.sphericity();
  eventBoosted_circularity = boost_algo.circularity();
+
+
+
+ if (n_fatjet>1){
+
+    TLorentzVector suep_p4 = TLorentzVector();
+    TLorentzVector isr_p4 = TLorentzVector();
+    if (suepJet.pt() > FatJet_pt[1]){
+      suep_p4.SetPtEtaPhiM(suepJet.pt(), suepJet.eta(), suepJet.phi_std(), suepJet.m());
+      isr_p4.SetPtEtaPhiM(FatJet_pt[1], FatJet_eta[1], FatJet_phi[1], FatJet_mass[1]);
+    }
+    else{
+      suep_p4.SetPtEtaPhiM(suepJet.pt(), suepJet.eta(), suepJet.phi_std(), suepJet.m());
+      isr_p4.SetPtEtaPhiM(FatJet_pt[0], FatJet_eta[0], FatJet_phi[0], FatJet_mass[0]);
+    }
+    TVector3 boost_pt = suep_p4.BoostVector();
+    isr_p4.Boost(-boost_pt);
+
+    for (auto evt_trk : fj_part ){
+        TLorentzVector trk_p4 = TLorentzVector();
+        trk_p4.SetPtEtaPhiM( evt_trk.pt(), evt_trk.eta(), evt_trk.phi_std(), evt_trk.m());
+        trk_p4.Boost(-boost_pt);
+        if ( abs(trk_p4.DeltaPhi(isr_p4)) < 1.6 ) continue;
+	bPFcand_pt.push_back(trk_p4.Pt());
+	bPFcand_eta.push_back(trk_p4.Eta());
+	bPFcand_phi.push_back(trk_p4.Phi());
+	bPFcand_m.push_back(trk_p4.M());
+
+    }
+ }
+
   
  // * 
  // L1 info
