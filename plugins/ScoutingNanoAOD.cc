@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
+#include <math.h>
 
 // ROOT includes
 #include <TTree.h>
@@ -264,6 +265,7 @@ private:
   vector<Float16_t>	PFcand_pdgid;
   vector<Float16_t>	PFcand_q;
   vector<Float16_t>	PFcand_vertex;
+  vector<Float16_t>	PFcand_fjidx;
 
   //bPFCand
   UInt_t n_bpfcand;
@@ -272,7 +274,6 @@ private:
   vector<Float16_t> bPFcand_phi;
   vector<Float16_t>	bPFcand_m;
   vector<Float16_t>	bPFcand_pdgid;
-  vector<Float16_t>	bPFcand_vertex;
 
   // Fatjets 
   UInt_t n_fatjet;
@@ -411,7 +412,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("PFcand_pdgid"              ,&PFcand_pdgid	 );
   tree->Branch("PFcand_q"              ,&PFcand_q	 );
   tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
-
+  tree->Branch("PFcand_fjidx"             ,&PFcand_fjidx 	 );
 
   tree->Branch("n_bpfcand"            	   ,&n_bpfcand 		,"n_bpfcand/i"		);	
   tree->Branch("bPFcand_pt"        	       ,&bPFcand_pt 		 );
@@ -419,7 +420,6 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("bPFcand_phi"            	   ,&bPFcand_phi		 );
   tree->Branch("bPFcand_m"            	   ,&bPFcand_m 		 );
   tree->Branch("bPFcand_pdgid"              ,&bPFcand_pdgid	 );
-  tree->Branch("bPFcand_vertex"             ,&bPFcand_vertex 	 );
 
   tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
   tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
@@ -611,6 +611,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   n_ele = 0;
 
   vector<ScoutingParticle> PFcands;
+  PFcands.clear();
 
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
@@ -700,6 +701,15 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     std::sort(PFcands.begin(), PFcands.end(), custompT);
 
+
+    PFcand_pt.clear();
+    PFcand_eta.clear();
+    PFcand_phi.clear();
+    PFcand_m.clear();
+    PFcand_pdgid.clear();
+    PFcand_q.clear();
+    PFcand_vertex.clear();
+    PFcand_fjidx.clear();
 
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
@@ -919,6 +929,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   unsigned int maxNconstit=0;
   PseudoJet suepJet = PseudoJet(0, 0, 0, 0);
 
+  n_fatjet = 0;
   for(auto &j: ak15_jets) {
     FatJet_area.push_back(j.area());
     FatJet_eta .push_back(j.pseudorapidity());
@@ -958,6 +969,31 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_fatjet++;
   }
 
+
+
+  n_pfcand = 0;
+  for (auto & pfcands_iter : PFcands ) {
+    if (pfcands_iter.pt() < 1.) continue;
+    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;    
+    int tmpidx = -1;
+    int ak15count = 0;
+    for (auto &j: ak15_jets) {
+      for (auto &k: j.constituents()){
+        if ((UInt_t)k.user_index() == n_pfcand){
+          tmpidx = ak15count;
+          ak15count++;
+          break;
+        }
+      }
+      if (tmpidx>-1)
+        break;
+      else
+        ak15count++;
+    }
+    PFcand_fjidx.push_back(tmpidx);
+    n_pfcand++;
+  }
+
  // done for all events, no need to reset?
  EventShapeVariables event_algo(event_tracks);
  event_isotropy    = event_algo.isotropy();
@@ -978,9 +1014,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
  suepJet_sphericity  = suep_algo.sphericity();
  suepJet_circularity = suep_algo.circularity();
 
- 
+ /*
  // done for event, after boosting & removing ISR w/in delta phi
- vector<math::XYZVector> boost_tracks; // after boost with deltaphi removal 
  if (maxNconstit > 0) {
     TLorentzVector suep_p4 = TLorentzVector();
     suep_p4.SetPtEtaPhiM(suepJet.pt(), suepJet.eta(), suepJet.phi_std(), suepJet.m());
@@ -993,7 +1028,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         
         // christos requires dPhi(trk_p4,ISR candidate)
         // trying this because not sure we should require two fat jets?
+
+
         if ( abs(trk_p4.DeltaPhi(-suep_p4) ) < 1.6 ) continue;
+
         trk.SetXYZ(evt_trk.px(), evt_trk.py(), evt_trk.pz() );
         boost_tracks.push_back(trk);
     }
@@ -1002,10 +1040,17 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
  eventBoosted_isotropy    = boost_algo.isotropy();
  eventBoosted_sphericity  = boost_algo.sphericity();
  eventBoosted_circularity = boost_algo.circularity();
+ */
 
-
+ bPFcand_pt.clear();
+ bPFcand_eta.clear();
+ bPFcand_phi.clear();
+ bPFcand_m.clear();
+ bPFcand_pdgid.clear();
+ n_bpfcand = 0;
 
  if (n_fatjet>1){
+   vector<math::XYZVector> boost_tracks; // after boost with deltaphi removal 
 
     TLorentzVector suep_p4 = TLorentzVector();
     TLorentzVector isr_p4 = TLorentzVector();
@@ -1016,6 +1061,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     else{
       suep_p4.SetPtEtaPhiM(suepJet.pt(), suepJet.eta(), suepJet.phi_std(), suepJet.m());
       isr_p4.SetPtEtaPhiM(FatJet_pt[0], FatJet_eta[0], FatJet_phi[0], FatJet_mass[0]);
+
     }
     TVector3 boost_pt = suep_p4.BoostVector();
     isr_p4.Boost(-boost_pt);
@@ -1024,13 +1070,26 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         TLorentzVector trk_p4 = TLorentzVector();
         trk_p4.SetPtEtaPhiM( evt_trk.pt(), evt_trk.eta(), evt_trk.phi_std(), evt_trk.m());
         trk_p4.Boost(-boost_pt);
+
+	if (isnan(trk_p4.Phi()) || isnan(isr_p4.Phi())){
+	  continue;
+	}
         if ( abs(trk_p4.DeltaPhi(isr_p4)) < 1.6 ) continue;
+
 	bPFcand_pt.push_back(trk_p4.Pt());
 	bPFcand_eta.push_back(trk_p4.Eta());
 	bPFcand_phi.push_back(trk_p4.Phi());
 	bPFcand_m.push_back(trk_p4.M());
+	bPFcand_pdgid.push_back(PFcand_pdgid[(UInt_t)evt_trk.user_index()]);
 
+        trk.SetXYZ(evt_trk.px(), evt_trk.py(), evt_trk.pz() );
+        boost_tracks.push_back(trk);
+	n_bpfcand += 1;
     }
+    EventShapeVariables boost_algo(boost_tracks);
+    eventBoosted_isotropy    = boost_algo.isotropy();
+    eventBoosted_sphericity  = boost_algo.sphericity();
+    eventBoosted_circularity = boost_algo.circularity();
  }
 
   

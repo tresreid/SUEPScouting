@@ -86,7 +86,7 @@ params.register(
 
 params.setDefault(
     'maxEvents', 
-    10 
+    100000000
 )
 
 params.setDefault(
