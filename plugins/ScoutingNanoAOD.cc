@@ -127,6 +127,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
+  const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   //const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
 
   std::vector<std::string> triggerPathsVector;
@@ -266,6 +267,7 @@ private:
   vector<Float16_t>	PFcand_q;
   vector<Float16_t>	PFcand_vertex;
   vector<Float16_t>	PFcand_fjidx;
+  vector<bool>	PFcand_fromsuep;
 
   //bPFCand
   UInt_t n_bpfcand;
@@ -338,7 +340,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
 //  pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
-//  gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
+  gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
@@ -413,6 +415,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("PFcand_q"              ,&PFcand_q	 );
   tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
   tree->Branch("PFcand_fjidx"             ,&PFcand_fjidx 	 );
+  tree->Branch("PFcand_fromsuep"             ,&PFcand_fromsuep 	 );
 
   tree->Branch("n_bpfcand"            	   ,&n_bpfcand 		,"n_bpfcand/i"		);	
   tree->Branch("bPFcand_pt"        	       ,&bPFcand_pt 		 );
@@ -560,6 +563,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingVertex> > verticesH;
   iEvent.getByToken(verticesToken, verticesH);
 
+  Handle<vector<reco::GenParticle> > genP;
+  iEvent.getByToken(gensToken, genP);
+
   run = iEvent.eventAuxiliary().run();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
 
@@ -683,6 +689,34 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         n_pvs++;
     }
 
+
+  std::vector<float> truth_etas;
+  std::vector<float> truth_phis;
+  truth_etas.clear();
+  truth_phis.clear();
+
+  for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
+    //std::cout << "pdgId, pT: " << genp_iter->pdgId() << " , " << genp_iter->pt() << std::endl;
+    bool from_suep = false;
+    if (genp_iter->status()==1){
+      if (genp_iter->numberOfMothers()>0){
+	reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
+	while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
+	  mother = (reco::GenParticle*)mother->mother();
+	  if (abs(mother->pdgId())==25){
+	    from_suep = true;
+	    break;
+	  }
+	}
+      }
+    }
+    if (from_suep){
+      truth_etas.push_back(genp_iter->eta());
+      truth_phis.push_back(genp_iter->phi());
+    }
+  }
+
+
   // * 
   // Particle Flow candidates 
   // *
@@ -710,6 +744,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_q.clear();
     PFcand_vertex.clear();
     PFcand_fjidx.clear();
+    PFcand_fromsuep.clear();
 
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
@@ -722,6 +757,16 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
     PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
     PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+
+    bool fromsuep = 0;
+    for (unsigned int e = 0; e < truth_etas.size(); e++){
+      if (deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi()))) < 0.03*0.03){
+	fromsuep = 1;
+	break;
+      }
+    }
+
+    PFcand_fromsuep.push_back(fromsuep);
     PFcand_m.push_back(pfcands_iter.m());
     PFcand_pdgid.push_back(pfcands_iter.pdgId());
     PFcand_q.push_back(getCharge(pfcands_iter.pdgId()));
@@ -743,6 +788,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     n_pfcand++;
   } 
+
 
   // 
   // Muons   
