@@ -699,7 +699,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     // Cluster charged PF candidates into fat jets
     if (pfcands_iter.vertex() != 0) continue;
     if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
-    if (pfcands_iter.pt() < 1.) continue; 
+    if (pfcands_iter.pt() < 0.5) continue; 
     if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
 
     // For clustering fat jets
