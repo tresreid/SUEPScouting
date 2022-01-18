@@ -277,6 +277,11 @@ private:
   vector<Float16_t>	bPFcand_m;
   vector<Float16_t>	bPFcand_pdgid;
 
+  // SUEP decay products
+  vector<Float16_t>	truth_pts;
+  vector<Float16_t>	truth_etas;
+  vector<Float16_t>	truth_phis;
+
   // Fatjets 
   UInt_t n_fatjet;
   vector<Float16_t> FatJet_area;
@@ -423,6 +428,10 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("bPFcand_phi"            	   ,&bPFcand_phi		 );
   tree->Branch("bPFcand_m"            	   ,&bPFcand_m 		 );
   tree->Branch("bPFcand_pdgid"              ,&bPFcand_pdgid	 );
+
+  tree->Branch("daughter_pt" , &truth_pts);
+  tree->Branch("daughter_eta" , &truth_etas);
+  tree->Branch("daughter_phi" , &truth_phis);
 
   tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
   tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
@@ -690,8 +699,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     }
 
 
-  std::vector<float> truth_etas;
-  std::vector<float> truth_phis;
+  truth_pts.clear();
   truth_etas.clear();
   truth_phis.clear();
 
@@ -711,6 +719,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       }
     }
     if (from_suep){
+      truth_pts.push_back(genp_iter->pt());
       truth_etas.push_back(genp_iter->eta());
       truth_phis.push_back(genp_iter->phi());
     }
