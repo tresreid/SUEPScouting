@@ -755,6 +755,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_fjidx.clear();
     PFcand_fromsuep.clear();
 
+    
+    vector<unsigned int> daughters_used; // for 1-to-1 reco-truth matching
+    daughters_used.clear();
+
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
   math::XYZVector trk = math::XYZVector(0,0,0); 
@@ -769,7 +773,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     bool fromsuep = 0;
     for (unsigned int e = 0; e < truth_etas.size(); e++){
+      if(std::find(daughters_used.begin(), daughters_used.end(), e) != daughters_used.end()) 
+	continue;
       if (deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi()))) < 0.03*0.03){
+	daughters_used.push_back(e);
 	fromsuep = 1;
 	break;
       }
