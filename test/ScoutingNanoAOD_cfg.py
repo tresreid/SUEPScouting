@@ -86,7 +86,7 @@ params.register(
 
 params.setDefault(
     'maxEvents', 
-    10 
+    100000000
 )
 
 params.setDefault(
@@ -221,6 +221,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	pfcands          = cms.InputTag("hltScoutingPFPacker"),
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
     vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    gens         = cms.InputTag("genParticles"),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
     #pileupinfo       = cms.InputTag("addPileupInfo"),
     #geneventinfo     = cms.InputTag("generator"),
