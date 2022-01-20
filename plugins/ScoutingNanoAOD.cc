@@ -267,6 +267,7 @@ private:
   vector<Float16_t>	PFcand_q;
   vector<Float16_t>	PFcand_vertex;
   vector<Float16_t>	PFcand_fjidx;
+  vector<Float16_t>	PFcand_dR;
   vector<bool>	PFcand_fromsuep;
 
   //bPFCand
@@ -421,6 +422,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
   tree->Branch("PFcand_fjidx"             ,&PFcand_fjidx 	 );
   tree->Branch("PFcand_fromsuep"             ,&PFcand_fromsuep 	 );
+  tree->Branch("PFcand_dR"        	       ,&PFcand_dR 		 );
 
   tree->Branch("n_bpfcand"            	   ,&n_bpfcand 		,"n_bpfcand/i"		);	
   tree->Branch("bPFcand_pt"        	       ,&bPFcand_pt 		 );
@@ -754,35 +756,33 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_vertex.clear();
     PFcand_fjidx.clear();
     PFcand_fromsuep.clear();
+    PFcand_dR.clear();
 
     
     vector<unsigned int> daughters_used; // for 1-to-1 reco-truth matching
     daughters_used.clear();
-
+//////////////////////////////////////
+//new code 
+  vector<vector<float> > dr_vector;
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
   math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
-  for (auto & pfcands_iter : PFcands ) {
+  for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
+    vector<float> dr_vector_row; //sets all dR values between pFcands and gen tracks
     if (pfcands_iter.pt() < 0.5) continue;
     if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
 
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
     PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
     PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
-
-    bool fromsuep = 0;
-    for (unsigned int e = 0; e < truth_etas.size(); e++){
-      if(std::find(daughters_used.begin(), daughters_used.end(), e) != daughters_used.end()) 
-	continue;
-      if (deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi()))) < 0.03*0.03){
-	daughters_used.push_back(e);
-	fromsuep = 1;
-	break;
-      }
+    for(unsigned int e = 0; e < truth_etas.size(); e++){
+      
+      auto dR = deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+      dr_vector_row.push_back(dR);//fills are dR values for this pFcand and all gen
+      
     }
-
-    PFcand_fromsuep.push_back(fromsuep);
+    dr_vector.push_back(dr_vector_row);// makes matrix of all pFcand-gen dR values
     PFcand_m.push_back(pfcands_iter.m());
     PFcand_pdgid.push_back(pfcands_iter.pdgId());
     PFcand_q.push_back(getCharge(pfcands_iter.pdgId()));
@@ -808,7 +808,112 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     }
 
     n_pfcand++;
-  } 
+  }
+
+  // 1 to 1 gen matching
+  std::vector<int> used_pf;
+  std::vector<int> used_gen;
+  std::vector<float> dr_matched;
+  float min;
+  do{
+    min = std::numeric_limits<float>::max();
+    int row =0;
+    int minrow=-1;
+    int mincol=-1;
+    for( auto & v : dr_vector){ //loops over dR values for each PFcand
+      if(std::find(used_pf.begin(), used_pf.end(), row) != used_pf.end()){row++; continue;}// skip already matched pf Candidates
+      int col=0;
+      for( auto & e : v){ // loops over dR values for each gen associated with this PFCand
+      if(std::find(used_gen.begin(), used_gen.end(), col) != used_gen.end()){col++; continue;}// skip already matched gen
+        if(e <= min){ //finds min dR value within matrix. sets the used col and row position for the minimum as well as the new min dR value.
+           mincol = col;//min_element(v.begin(), v.end()) - v.begin();
+           minrow = row;
+           min = e;
+        }
+      col++;
+      }
+      row++;
+      if(minrow != -1 && mincol != -1){ // if there is a dR match
+        used_pf.push_back(minrow);// index of Pf cand with match
+        used_gen.push_back(mincol);// index of gen cand with match
+        dr_matched.push_back(min);// dR between pF cand and gen
+        //std::for_each(dr_vector.begin(), dr_vector.end(),
+        //  [&mincol](auto& v){
+  //        v.erase(v.begin()+mincol); //delete used gen values from all row as it is no longer needed and to avoid repeated matches with the same gens
+  //      });
+      }
+    }
+  }while(min < 0.3); //cut off value for min dR
+
+for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
+    auto it = find(used_pf.begin(), used_pf.end(), e); // see if PF cand has a match
+    if(it != used_pf.end()){
+      float dR = dr_matched.at(e);// get dR associated with this PF cand
+      PFcand_dR.push_back(dR); //push back dR at that match positon into proper position.
+      if(dR < 0.05){PFcand_fromsuep.push_back(1);}
+      else{PFcand_fromsuep.push_back(0);}
+    }
+    else{ 
+      PFcand_dR.push_back(-1);//no match found set as fake value
+      PFcand_fromsuep.push_back(0);
+    }
+  }
+///////////////////////////////////////
+
+
+
+// old code
+//  vector<PseudoJet> fj_part;
+//  vector<math::XYZVector> event_tracks; // all event tracks
+//  math::XYZVector trk = math::XYZVector(0,0,0); 
+//  n_pfcand = 0;
+//  for (auto & pfcands_iter : PFcands ) {
+//    if (pfcands_iter.pt() < 0.5) continue;
+//    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+//
+//    PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
+//    PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
+//    PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+//
+//    bool fromsuep = 0;
+//    for (unsigned int e = 0; e < truth_etas.size(); e++){
+//      if(std::find(daughters_used.begin(), daughters_used.end(), e) != daughters_used.end()) 
+//	continue;
+//      if (deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi()))) < 0.03*0.03){
+//	daughters_used.push_back(e);
+//	fromsuep = 1;
+//  std::cout<< "test"<<std::endl;
+//	break;
+//      }
+//    }
+//
+//    PFcand_fromsuep.push_back(fromsuep);
+//    PFcand_m.push_back(pfcands_iter.m());
+//    PFcand_pdgid.push_back(pfcands_iter.pdgId());
+//    PFcand_q.push_back(getCharge(pfcands_iter.pdgId()));
+//    PFcand_vertex.push_back(pfcands_iter.vertex());
+//
+//    // Cluster charged PF candidates into fat jets
+//    if (pfcands_iter.vertex() != 0) continue;
+//    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+//    if (pfcands_iter.pt() < 0.5) continue; 
+//    if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
+//
+//    // For clustering fat jets
+//    PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
+//    temp_jet.reset_PtYPhiM(pfcands_iter.pt(), pfcands_iter.eta(), pfcands_iter.phi(), pfcands_iter.m());
+//    temp_jet.set_user_index(n_pfcand);
+//    if (pfcands_iter.vertex() == 0 && getCharge(pfcands_iter.pdgId()) != 0 ){
+//      fj_part.push_back(temp_jet);
+//    
+//      // Event shape variables on whole event
+//      trk = math::XYZVector(0,0,0);
+//      trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
+//      event_tracks.push_back(trk);
+//    }
+//
+//    n_pfcand++;
+//  } 
 
 
   // 
