@@ -164,6 +164,7 @@ private:
   std::vector<bool>            l1Result_;
   std::vector<int>             l1Prescale_;
   std::vector<bool>            hltResult_;
+  std::vector<std::string>            hltResultName_;
 
   //Photon
   UInt_t n_pho;
@@ -384,6 +385,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
     
   // Triggers
   tree->Branch("hltResult"               ,&hltResult_   );              
+  tree->Branch("hltResultName"               ,&hltResultName_   );              
   tree->Branch("l1Result"		         ,&l1Result_	);		
   tree->Branch("l1Prescale"		         ,&l1Prescale_  );		
   //Electrons
@@ -574,8 +576,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingVertex> > verticesH;
   iEvent.getByToken(verticesToken, verticesH);
 
-  Handle<vector<reco::GenParticle> > genP;
-  iEvent.getByToken(gensToken, genP);
 
   run = iEvent.eventAuxiliary().run();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
@@ -583,27 +583,44 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   // Which triggers fired
   hltResult_.clear();
+  hltResultName_.clear();
 
   iEvent.getByToken(triggerBits_, triggerBits);
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
 
-  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
+//  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
+//      const std::string& hltbitName = names.triggerName(i);
+//      std::string hltpathName = hltbitName;
+//      bool hltpassFinal = triggerBits->accept(i);
+//
+//      for(size_t j = 0; j < hltSeeds_.size(); j++){
+//        TPRegexp pattern(hltSeeds_[j]);
+//        if( TString(hltpathName).Contains(pattern)){
+//          hltResult_.push_back(hltpassFinal);
+//          std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
+//        }
+//      }
+//      
+//     
+//  }
+  
+  for(size_t j = 0; j < hltSeeds_.size(); j++){
+        TPRegexp pattern(hltSeeds_[j]);
+        //std::cout<<"seed: "<<hltSeeds_[j]<<std::endl;
+    for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
       const std::string& hltbitName = names.triggerName(i);
       std::string hltpathName = hltbitName;
       bool hltpassFinal = triggerBits->accept(i);
-
-      for(size_t i = 0; i < hltSeeds_.size(); i++){
-        TPRegexp pattern(hltSeeds_[i]);
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
-          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal << std::endl;
+          hltResultName_.push_back(hltbitName);
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
         }
       }
       
      
   }
-  
 
   // *
   // Electrons here, also electrons are not contained in pf candidate collection. need to merge them explicitly
@@ -701,31 +718,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     }
 
 
-  truth_pts.clear();
-  truth_etas.clear();
-  truth_phis.clear();
-
-  for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
-    //std::cout << "pdgId, pT: " << genp_iter->pdgId() << " , " << genp_iter->pt() << std::endl;
-    bool from_suep = false;
-    if (genp_iter->status()==1){
-      if (genp_iter->numberOfMothers()>0){
-	reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
-	while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
-	  mother = (reco::GenParticle*)mother->mother();
-	  if (abs(mother->pdgId())==25){
-	    from_suep = true;
-	    break;
-	  }
-	}
-      }
-    }
-    if (from_suep){
-      truth_pts.push_back(genp_iter->pt());
-      truth_etas.push_back(genp_iter->eta());
-      truth_phis.push_back(genp_iter->phi());
-    }
-  }
 
 
   // * 
@@ -810,6 +802,35 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pfcand++;
   }
 
+if(false){  //do not run for data
+  Handle<vector<reco::GenParticle> > genP;
+  iEvent.getByToken(gensToken, genP);
+
+  truth_pts.clear();
+  truth_etas.clear();
+  truth_phis.clear();
+
+  for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
+    //std::cout << "pdgId, pT: " << genp_iter->pdgId() << " , " << genp_iter->pt() << std::endl;
+    bool from_suep = false;
+    if (genp_iter->status()==1){
+      if (genp_iter->numberOfMothers()>0){
+	reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
+	while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
+	  mother = (reco::GenParticle*)mother->mother();
+	  if (abs(mother->pdgId())==25){
+	    from_suep = true;
+	    break;
+	  }
+	}
+      }
+    }
+    if (from_suep){
+      truth_pts.push_back(genp_iter->pt());
+      truth_etas.push_back(genp_iter->eta());
+      truth_phis.push_back(genp_iter->phi());
+    }
+  }
   // 1 to 1 gen matching
   std::vector<int> used_pf;
   std::vector<int> used_gen;
@@ -858,6 +879,8 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
       PFcand_fromsuep.push_back(0);
     }
   }
+
+}
 ///////////////////////////////////////
 
 
