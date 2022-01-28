@@ -164,6 +164,7 @@ private:
   std::vector<bool>            l1Result_;
   std::vector<int>             l1Prescale_;
   std::vector<bool>            hltResult_;
+  std::vector<std::string>            hltResultName_;
 
   //Photon
   UInt_t n_pho;
@@ -384,6 +385,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
     
   // Triggers
   tree->Branch("hltResult"               ,&hltResult_   );              
+  tree->Branch("hltResultName"               ,&hltResultName_   );              
   tree->Branch("l1Result"		         ,&l1Result_	);		
   tree->Branch("l1Prescale"		         ,&l1Prescale_  );		
   //Electrons
@@ -581,27 +583,44 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   // Which triggers fired
   hltResult_.clear();
+  hltResultName_.clear();
 
   iEvent.getByToken(triggerBits_, triggerBits);
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
 
-  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
+//  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
+//      const std::string& hltbitName = names.triggerName(i);
+//      std::string hltpathName = hltbitName;
+//      bool hltpassFinal = triggerBits->accept(i);
+//
+//      for(size_t j = 0; j < hltSeeds_.size(); j++){
+//        TPRegexp pattern(hltSeeds_[j]);
+//        if( TString(hltpathName).Contains(pattern)){
+//          hltResult_.push_back(hltpassFinal);
+//          std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
+//        }
+//      }
+//      
+//     
+//  }
+  
+  for(size_t j = 0; j < hltSeeds_.size(); j++){
+        TPRegexp pattern(hltSeeds_[j]);
+        //std::cout<<"seed: "<<hltSeeds_[j]<<std::endl;
+    for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
       const std::string& hltbitName = names.triggerName(i);
       std::string hltpathName = hltbitName;
       bool hltpassFinal = triggerBits->accept(i);
-
-      for(size_t i = 0; i < hltSeeds_.size(); i++){
-        TPRegexp pattern(hltSeeds_[i]);
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
-          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal << std::endl;
+          hltResultName_.push_back(hltbitName);
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
         }
       }
       
      
   }
-  
 
   // *
   // Electrons here, also electrons are not contained in pf candidate collection. need to merge them explicitly
