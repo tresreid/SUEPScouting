@@ -10,8 +10,8 @@ git clone -b mods https://github.com/SUEPPhysics/SUEPScouting.git
 # To setup and compile
 do this each time you login
 ```
-cd src
 cmsenv
+cd $CMSSW_BASE/src
 scram b
 ```
 
