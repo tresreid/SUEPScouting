@@ -142,7 +142,8 @@ private:
 
   // Trigger information 
        
-  bool doL1;       
+  bool doL1;
+  bool isMC;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
