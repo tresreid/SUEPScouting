@@ -1404,7 +1404,7 @@ int ScoutingNanoAOD::getCharge(int pdgId) {
 }
 bool ScoutingNanoAOD::jetID(const ScoutingPFJet &pfjet){
 // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
-    
+    if (pfjet.pt() < 30){return false;}//raise pt threshold for HT calculation 
     TLorentzVector jet; 
     jet.SetPtEtaPhiM(pfjet.pt(), pfjet.eta(), pfjet.phi(), pfjet.m() );
     
