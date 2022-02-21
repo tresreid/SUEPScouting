@@ -232,6 +232,7 @@ private:
   UInt_t n_jet;
   UInt_t n_jetId;
   float ht;
+  float Muon_totPt;
   bool passJetId;
   vector<Float16_t> 	Jet_pt;
   vector<Float16_t>     Jet_eta;
@@ -260,6 +261,7 @@ private:
 
   //PFCand
   UInt_t n_pfcand;
+  UInt_t n_pfMu;
   vector<Float16_t> PFcand_pt;
   vector<Float16_t> PFcand_eta;
   vector<Float16_t> PFcand_phi;
@@ -415,6 +417,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Photon_sigmaietaieta"      ,&Photon_sigmaietaieta	);
 
   tree->Branch("n_pfcand"            	   ,&n_pfcand 		,"n_pfcand/i"		);	
+  tree->Branch("n_pfMu"            	   ,&n_pfMu 		,"n_pfMu/i"		);	
   tree->Branch("PFcand_pt"        	       ,&PFcand_pt 		 );
   tree->Branch("PFcand_eta"            	   ,&PFcand_eta 	 );
   tree->Branch("PFcand_phi"            	   ,&PFcand_phi		 );
@@ -479,6 +482,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
 
   tree->Branch("ht"                         ,&ht                 );
+  tree->Branch("Muon_totPt"                         ,&Muon_totPt                 );
   tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"	  );
   tree->Branch("n_jetId"            	   	,&n_jetId 			, "n_jetId/i" );
   tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
@@ -760,6 +764,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   vector<math::XYZVector> event_tracks; // all event tracks
   math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
+  Muon_totPt =0; 
+  n_pfMu =0;
   for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
     vector<float> dr_vector_row; //sets all dR values between pFcands and gen tracks
     if (pfcands_iter.pt() < 0.5) continue;
@@ -768,6 +774,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
     PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
     PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+    if(abs(pfcands_iter.pdgId()) == 13){
+     Muon_totPt += pfcands_iter.pt(); 
+     n_pfMu ++;
+    }
     for(unsigned int e = 0; e < truth_etas.size(); e++){
       
       auto dR = deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
@@ -883,62 +893,6 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 }
 ///////////////////////////////////////
 
-
-
-// old code
-//  vector<PseudoJet> fj_part;
-//  vector<math::XYZVector> event_tracks; // all event tracks
-//  math::XYZVector trk = math::XYZVector(0,0,0); 
-//  n_pfcand = 0;
-//  for (auto & pfcands_iter : PFcands ) {
-//    if (pfcands_iter.pt() < 0.5) continue;
-//    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
-//
-//    PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
-//    PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
-//    PFcand_phi.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
-//
-//    bool fromsuep = 0;
-//    for (unsigned int e = 0; e < truth_etas.size(); e++){
-//      if(std::find(daughters_used.begin(), daughters_used.end(), e) != daughters_used.end()) 
-//	continue;
-//      if (deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi()))) < 0.03*0.03){
-//	daughters_used.push_back(e);
-//	fromsuep = 1;
-//  std::cout<< "test"<<std::endl;
-//	break;
-//      }
-//    }
-//
-//    PFcand_fromsuep.push_back(fromsuep);
-//    PFcand_m.push_back(pfcands_iter.m());
-//    PFcand_pdgid.push_back(pfcands_iter.pdgId());
-//    PFcand_q.push_back(getCharge(pfcands_iter.pdgId()));
-//    PFcand_vertex.push_back(pfcands_iter.vertex());
-//
-//    // Cluster charged PF candidates into fat jets
-//    if (pfcands_iter.vertex() != 0) continue;
-//    if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
-//    if (pfcands_iter.pt() < 0.5) continue; 
-//    if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
-//
-//    // For clustering fat jets
-//    PseudoJet temp_jet = PseudoJet(0, 0, 0, 0);
-//    temp_jet.reset_PtYPhiM(pfcands_iter.pt(), pfcands_iter.eta(), pfcands_iter.phi(), pfcands_iter.m());
-//    temp_jet.set_user_index(n_pfcand);
-//    if (pfcands_iter.vertex() == 0 && getCharge(pfcands_iter.pdgId()) != 0 ){
-//      fj_part.push_back(temp_jet);
-//    
-//      // Event shape variables on whole event
-//      trk = math::XYZVector(0,0,0);
-//      trk.SetXYZ(temp_jet.px(), temp_jet.py(), temp_jet.pz() );
-//      event_tracks.push_back(trk);
-//    }
-//
-//    n_pfcand++;
-//  } 
-
-
   // 
   // Muons   
   // 
@@ -973,7 +927,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
   Muon_trkdsz.clear();
   n_mu=0;
   for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
- 	Muon_pt.push_back(muons_iter->pt());
+ 	Muon_pt.push_back(muons_iter->pt()); 
    	Muon_eta.push_back(muons_iter->eta());
    	Muon_phi.push_back(muons_iter->phi());
    	Muon_m.push_back(muons_iter->m());
