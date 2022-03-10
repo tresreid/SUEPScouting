@@ -1114,7 +1114,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 
 
 
-  int n_pfcand_tot = 0;
+  unsigned int n_pfcand_tot = 0;
   for (auto & pfcands_iter : PFcands ) {
     if (pfcands_iter.pt() < 1.) continue;
     if (abs(pfcands_iter.eta()) >= 2.4 ) continue;    
