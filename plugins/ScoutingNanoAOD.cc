@@ -234,6 +234,7 @@ private:
   UInt_t n_jetId;
   float ht;
   float Muon_totPt;
+  float Electron_totPt;
   bool passJetId;
   vector<Float16_t> 	Jet_pt;
   vector<Float16_t>     Jet_eta;
@@ -263,6 +264,7 @@ private:
   //PFCand
   UInt_t n_pfcand;
   UInt_t n_pfMu;
+  UInt_t n_pfEl;
   vector<Float16_t> PFcand_pt;
   vector<Float16_t> PFcand_eta;
   vector<Float16_t> PFcand_phi;
@@ -420,6 +422,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
   tree->Branch("n_pfcand"            	   ,&n_pfcand 		,"n_pfcand/i"		);	
   tree->Branch("n_pfMu"            	   ,&n_pfMu 		,"n_pfMu/i"		);	
+  tree->Branch("n_pfEl"            	   ,&n_pfEl 		,"n_pfEl/i"		);	
   tree->Branch("PFcand_pt"        	       ,&PFcand_pt 		 );
   tree->Branch("PFcand_eta"            	   ,&PFcand_eta 	 );
   tree->Branch("PFcand_phi"            	   ,&PFcand_phi		 );
@@ -485,6 +488,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
   tree->Branch("ht"                         ,&ht                 );
   tree->Branch("Muon_totPt"                         ,&Muon_totPt                 );
+  tree->Branch("Electron_totPt"                         ,&Electron_totPt                 );
   tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"	  );
   tree->Branch("n_jetId"            	   	,&n_jetId 			, "n_jetId/i" );
   tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
@@ -594,23 +598,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByToken(triggerBits_, triggerBits);
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
-
-//  for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
-//      const std::string& hltbitName = names.triggerName(i);
-//      std::string hltpathName = hltbitName;
-//      bool hltpassFinal = triggerBits->accept(i);
-//
-//      for(size_t j = 0; j < hltSeeds_.size(); j++){
-//        TPRegexp pattern(hltSeeds_[j]);
-//        if( TString(hltpathName).Contains(pattern)){
-//          hltResult_.push_back(hltpassFinal);
-//          std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
-//        }
-//      }
-//      
-//     
-//  }
-  
+ 
   for(size_t j = 0; j < hltSeeds_.size(); j++){
         TPRegexp pattern(hltSeeds_[j]);
         //std::cout<<"seed: "<<hltSeeds_[j]<<std::endl;
@@ -767,7 +755,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   math::XYZVector trk = math::XYZVector(0,0,0); 
   n_pfcand = 0;
   Muon_totPt =0; 
+  Electron_totPt =0; 
   n_pfMu =0;
+  n_pfEl =0;
   for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
     vector<float> dr_vector_row; //sets all dR values between pFcands and gen tracks
     if (pfcands_iter.pt() < 0.5) continue;
@@ -779,6 +769,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     if(abs(pfcands_iter.pdgId()) == 13){
      Muon_totPt += pfcands_iter.pt(); 
      n_pfMu ++;
+    }
+    if(abs(pfcands_iter.pdgId()) == 11){
+     Electron_totPt += pfcands_iter.pt(); 
+     n_pfEl ++;
     }
     for(unsigned int e = 0; e < truth_etas.size(); e++){
       
@@ -1122,7 +1116,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 
 
 
-  n_pfcand = 0;
+  unsigned int n_pfcand_tot = 0;
   for (auto & pfcands_iter : PFcands ) {
     if (pfcands_iter.pt() < 1.) continue;
     if (abs(pfcands_iter.eta()) >= 2.4 ) continue;    
@@ -1130,7 +1124,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
     int ak15count = 0;
     for (auto &j: ak15_jets) {
       for (auto &k: j.constituents()){
-        if ((UInt_t)k.user_index() == n_pfcand){
+        if ((UInt_t)k.user_index() == n_pfcand_tot){
           tmpidx = ak15count;
           ak15count++;
           break;
@@ -1142,7 +1136,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
         ak15count++;
     }
     PFcand_fjidx.push_back(tmpidx);
-    n_pfcand++;
+    n_pfcand_tot++;
   }
 
  // done for all events, no need to reset?
@@ -1360,7 +1354,7 @@ int ScoutingNanoAOD::getCharge(int pdgId) {
 }
 bool ScoutingNanoAOD::jetID(const ScoutingPFJet &pfjet){
 // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
-    if (pfjet.pt() < 30){return false;}//raise pt threshold for HT calculation 
+    if (pfjet.pt() < 40){return false;}//raise pt threshold for HT calculation 
     TLorentzVector jet; 
     jet.SetPtEtaPhiM(pfjet.pt(), pfjet.eta(), pfjet.phi(), pfjet.m() );
     
