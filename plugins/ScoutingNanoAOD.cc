@@ -1227,7 +1227,8 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 	bPFcand_m.push_back(trk_p4.M());
 	bPFcand_pdgid.push_back(PFcand_pdgid[(UInt_t)evt_trk.user_index()]);
 
-        trk.SetXYZ(evt_trk.px(), evt_trk.py(), evt_trk.pz() );
+        //trk.SetXYZ(evt_trk.px(), evt_trk.py(), evt_trk.pz() );
+        trk.SetXYZ(trk_p4.Px(), trk_p4.Py(), trk_p4.Pz() );
         boost_tracks.push_back(trk);
 	n_bpfcand += 1;
     }
