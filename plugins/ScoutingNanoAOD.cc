@@ -287,6 +287,7 @@ private:
   vector<Float16_t>	truth_pts;
   vector<Float16_t>	truth_etas;
   vector<Float16_t>	truth_phis;
+  vector<Float16_t>	truth_dR;
 
   // Fatjets 
   UInt_t n_fatjet;
@@ -439,9 +440,10 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("bPFcand_m"            	   ,&bPFcand_m 		 );
   tree->Branch("bPFcand_pdgid"              ,&bPFcand_pdgid	 );
 
-  tree->Branch("daughter_pt" , &truth_pts);
-  tree->Branch("daughter_eta" , &truth_etas);
-  tree->Branch("daughter_phi" , &truth_phis);
+  tree->Branch("gen_pt" , &truth_pts);
+  tree->Branch("gen_eta" , &truth_etas);
+  tree->Branch("gen_phi" , &truth_phis);
+  tree->Branch("gen_dR" , &truth_dR);
 
   tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
   tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
@@ -772,9 +774,17 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
      Electron_totPt += pfcands_iter.pt(); 
      n_pfEl ++;
     }
-    for(unsigned int e = 0; e < truth_etas.size(); e++){
+    //printf("test2: %d\n",static_cast<int>(truth_etas.size()));
+    //for(unsigned int e = 0; e < truth_etas.size(); e++){
+    Handle<vector<reco::GenParticle> > genP;
+    iEvent.getByToken(gensToken, genP);
+    for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
+      if (genp_iter->status()!=1){continue;}
+    if (genp_iter->charge()==0){continue;}
+    //if (getCharge(genp_iter.pdgId()) == 0 ) continue;
       
-      auto dR = deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+      auto dR = deltaR2(genp_iter->eta(),genp_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+      //auto dR = deltaR2(truth_etas[e],truth_phis[e],MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
       dr_vector_row.push_back(dR);//fills are dR values for this pFcand and all gen
       
     }
@@ -806,34 +816,37 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pfcand++;
   }
 
-if(false){  //do not run for data
+if(true){  //do not run for data
   Handle<vector<reco::GenParticle> > genP;
   iEvent.getByToken(gensToken, genP);
 
   truth_pts.clear();
   truth_etas.clear();
   truth_phis.clear();
+  truth_dR.clear();
 
   for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
     //std::cout << "pdgId, pT: " << genp_iter->pdgId() << " , " << genp_iter->pt() << std::endl;
-    bool from_suep = false;
-    if (genp_iter->status()==1){
-      if (genp_iter->numberOfMothers()>0){
-	reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
-	while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
-	  mother = (reco::GenParticle*)mother->mother();
-	  if (abs(mother->pdgId())==25){
-	    from_suep = true;
-	    break;
-	  }
-	}
-      }
-    }
-    if (from_suep){
+//    bool from_suep = false;
+    if (genp_iter->status()!=1){continue;}
+    if (genp_iter->charge()==0){continue;}
+//      if (genp_iter->numberOfMothers()>0){
+//	reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
+//	while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
+//	  mother = (reco::GenParticle*)mother->mother();
+//	  if (abs(mother->pdgId())==25){
+//	    from_suep = true;
+//	    break;
+//	  }
+//	}
+//      }
+//    }
+//    if (from_suep){
+    //if (getCharge(genp_iter.pdgId()) == 0 ) continue;
       truth_pts.push_back(genp_iter->pt());
       truth_etas.push_back(genp_iter->eta());
       truth_phis.push_back(genp_iter->phi());
-    }
+//    }
   }
   // 1 to 1 gen matching
   std::vector<int> used_pf;
@@ -846,34 +859,40 @@ if(false){  //do not run for data
     int minrow=-1;
     int mincol=-1;
     for( auto & v : dr_vector){ //loops over dR values for each PFcand
-      if(std::find(used_pf.begin(), used_pf.end(), row) != used_pf.end()){row++; continue;}// skip already matched pf Candidates
+      if(std::find(used_pf.begin(), used_pf.end(), row) != used_pf.end()){row++; continue;}// skip if this row is already a matched pf Candidates and increase the row counter
       int col=0;
       for( auto & e : v){ // loops over dR values for each gen associated with this PFCand
-      if(std::find(used_gen.begin(), used_gen.end(), col) != used_gen.end()){col++; continue;}// skip already matched gen
+      if(std::find(used_gen.begin(), used_gen.end(), col) != used_gen.end()){col++; continue;}// skip if this col is already a matched gen and increase the col counter
         if(e <= min){ //finds min dR value within matrix. sets the used col and row position for the minimum as well as the new min dR value.
-           mincol = col;//min_element(v.begin(), v.end()) - v.begin();
+           mincol = col;
            minrow = row;
            min = e;
+     //      printf("mins: %f %d %d\n",e,col,row);
         }
-      col++;
+      col++; // gen counter position increment
       }
-      row++;
+      row++; // pfcand counter positsion increment
+      }// all dR values have been looped over and the min dR has been found with position in gen and pfcand
       if(minrow != -1 && mincol != -1){ // if there is a dR match
         used_pf.push_back(minrow);// index of Pf cand with match
         used_gen.push_back(mincol);// index of gen cand with match
         dr_matched.push_back(min);// dR between pF cand and gen
+       // printf("push: %f %d %d\n",min,mincol,minrow);
+        //printf("min: %f\n",min);
         //std::for_each(dr_vector.begin(), dr_vector.end(),
         //  [&mincol](auto& v){
   //        v.erase(v.begin()+mincol); //delete used gen values from all row as it is no longer needed and to avoid repeated matches with the same gens
   //      });
       }
-    }
+    //}
   }while(min < 0.3); //cut off value for min dR
 
 for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
     auto it = find(used_pf.begin(), used_pf.end(), e); // see if PF cand has a match
     if(it != used_pf.end()){
-      float dR = dr_matched.at(e);// get dR associated with this PF cand
+      float dR = dr_matched.at(it-used_pf.begin());// get dR associated with this PF cand
+      //float dR = dr_matched.at(e);// get dR associated with this PF cand
+      //printf("test4 %f\n",dR);
       PFcand_dR.push_back(dR); //push back dR at that match positon into proper position.
       if(dR < 0.05){PFcand_fromsuep.push_back(1);}
       else{PFcand_fromsuep.push_back(0);}
@@ -881,6 +900,21 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
     else{ 
       PFcand_dR.push_back(-1);//no match found set as fake value
       PFcand_fromsuep.push_back(0);
+    }
+  }
+for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands again to set dR values in proper positions
+    auto it = find(used_gen.begin(), used_gen.end(), e); // see if PF cand has a match
+    if(it != used_gen.end()){
+      float dR = dr_matched.at(it-used_gen.begin());// get dR associated with this PF cand
+      //float dR = dr_matched.at(e);// get dR associated with this PF cand
+      //printf("test4 %f\n",dR);
+      truth_dR.push_back(dR); //push back dR at that match positon into proper position.
+      //if(dR < 0.05){PFcand_fromsuep.push_back(1);}
+      //else{PFcand_fromsuep.push_back(0);}
+    }
+    else{ 
+      truth_dR.push_back(-1);//no match found set as fake value
+      //PFcand_fromsuep.push_back(0);
     }
   }
 
