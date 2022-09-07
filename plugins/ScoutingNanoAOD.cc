@@ -144,6 +144,8 @@ private:
   // Trigger information 
        
   bool doL1;       
+  bool doData;       
+  bool doSignal;       
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -366,6 +368,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
+  doData                     (iConfig.existsAs<bool>("doData")               ?    iConfig.getParameter<bool>  ("doData")            : false),
+  doSignal                     (iConfig.existsAs<bool>("doSignal")               ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
   triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("bits"))),
@@ -742,10 +746,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         Vertex_isValidVtx.push_back( vertices_iter->isValidVtx() );
         n_pvs++;
     }
-  bool runSig = false;
-  bool notData = true;
+  //bool runSig = false;
+  //bool notData = true;
   //int counter=0;
-  if (notData) {
+  if (!doData) {
     for(auto PVI = puInfo->begin(); PVI != puInfo->end(); ++PVI){
       int pu_bunchcrossing = PVI->getBunchCrossing();
       if(pu_bunchcrossing ==0){
@@ -817,7 +821,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
      Electron_totPt += pfcands_iter.pt(); 
      n_pfEl ++;
     }
-    if(runSig){
+    if(doSignal){
       Handle<vector<reco::GenParticle> > genP;
       iEvent.getByToken(gensToken, genP);
       for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
@@ -864,7 +868,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pfcand++;
   }
 
-if(runSig){  //do not run for data
+if(doSignal){  //do not run for data
   Handle<vector<reco::GenParticle> > genP;
   iEvent.getByToken(gensToken, genP);
 
@@ -910,7 +914,7 @@ if(runSig){  //do not run for data
       truth_fromSuep.push_back(fromsuep);
   }
 }
-if(runSig){  //do not run for other samples to save time
+if(doSignal){  //do not run for other samples to save time
   // 1 to 1 gen matching
   std::vector<int> used_pf;
   std::vector<int> used_gen;
