@@ -221,9 +221,9 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	pfcands          = cms.InputTag("hltScoutingPFPacker"),
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
     vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    pileupinfo       = cms.InputTag("addPileupInfo"),
     gens         = cms.InputTag("genParticles"),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
-    #pileupinfo       = cms.InputTag("addPileupInfo"),
     #geneventinfo     = cms.InputTag("generator"),
 
     # for JEC corrections eventually
