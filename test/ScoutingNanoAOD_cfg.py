@@ -222,6 +222,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     photons          = cms.InputTag("hltScoutingEgammaPacker"),
 	pfcands          = cms.InputTag("hltScoutingPFPacker"),
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
+  
+    #vertices         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
     vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
     pileupinfo       = cms.InputTag("addPileupInfo"),
     gens         = cms.InputTag("genParticles"),
