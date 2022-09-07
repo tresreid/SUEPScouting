@@ -146,6 +146,7 @@ private:
   bool doL1;       
   bool doData;       
   bool doSignal;       
+  bool isMC;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -370,6 +371,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                     (iConfig.existsAs<bool>("doData")               ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                     (iConfig.existsAs<bool>("doSignal")               ?    iConfig.getParameter<bool>  ("doSignal")            : false),
+  isMC                     (iConfig.existsAs<bool>("isMC")               ?    iConfig.getParameter<bool>  ("isMC")            : true),
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
   triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("bits"))),

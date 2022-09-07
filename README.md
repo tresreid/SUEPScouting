@@ -1,31 +1,21 @@
 # To check out
 ```
-cmsrel CMSSW_11_1_0 #You can use 10_X_X too
-cd CMSSW_11_1_0/src
+cmsrel CMSSW_10_6_0 #you can use CMSSW_11_1_0
+cd CMSSW_10_6_0/src
 mkdir PhysicsTools
 cd PhysicsTools
-git clone https://github.com/SUEPPhysics/SUEPScouting.git 
+git clone -b mods https://github.com/SUEPPhysics/SUEPScouting.git 
 ```
 
-# To setup
+# To setup and compile
 do this each time you login
 ```
-cd src
+cd $CMSSW_BASE/src
 cmsenv
-voms-proxy-init
-```
-
-# To compile
-```
-cd src
 scram b
 ```
 
 # To run 
 ```
-cmsRun ScoutingNanoAOD_cfg.py fileList=sample.txt outputFile=sample.root maxEvents=10
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:aod.root outputFile=flatscouting.root maxEvents=-1
 ```
-
-# To do
-* jet energy corrections?
-* job submission

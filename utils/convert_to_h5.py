@@ -26,6 +26,24 @@ def store_objects_coordinates(arrays, nentries, nobj=10, obj='FatJet_'):
     
     return l1Obj_cyl, l1Obj_cart
 
+def store_objects_truth(arrays, nentries, nobj=10, obj='FatJet_'):
+    '''store objects in zero-padded numpy arrays'''
+    l1Obj_truth = np.zeros((nentries,nobj,1))
+    fromsuep = to_np_array(arrays['{}fromsuep'.format(obj)],maxN=nobj)
+    l1Obj_truth[:,:,0] = fromsuep
+    
+    return l1Obj_truth
+
+def store_objects_addfeatures(arrays, nentries, nobj=10, obj='FatJet_'):
+    '''store objects in zero-padded numpy arrays'''
+    l1Obj_features = np.zeros((nentries,nobj,2))
+    pdgid = to_np_array(arrays['{}pdgid'.format(obj)],maxN=nobj)
+    fjidx = to_np_array(arrays['{}fjidx'.format(obj)],maxN=nobj)
+    l1Obj_features[:,:,0] = pdgid
+    l1Obj_features[:,:,1] = fjidx
+    
+    return l1Obj_features
+
 def store_objects_features(arrays, nentries, nobj=10,obj='FatJet_'):
     '''store objects in zero-padded numpy arrays'''
     features=arrays.fields
@@ -34,9 +52,9 @@ def store_objects_features(arrays, nentries, nobj=10,obj='FatJet_'):
     for i in range(0,nfeats):
         objects[:,:,i] = to_np_array(arrays['{}'.format(features[i])],maxN=nobj)
     #add cartesian coordinates
-    pt = to_np_array(arrays['{}pt'.format(obj)],maxN=nobj)
-    eta = to_np_array(arrays['{}eta'.format(obj)],maxN=nobj)
-    phi = to_np_array(arrays['{}phi'.format(obj)],maxN=nobj)
+    pt = to_np_array(arrays['{}_pt'.format(obj)],maxN=nobj)
+    eta = to_np_array(arrays['{}_eta'.format(obj)],maxN=nobj)
+    phi = to_np_array(arrays['{}_phi'.format(obj)],maxN=nobj)
     objects[:,:,nfeats] = pt*np.cos(phi) #px
     objects[:,:,nfeats+1] = pt*np.sin(phi) #py
     objects[:,:,nfeats+2] = pt*np.sinh(eta) #pz
@@ -63,14 +81,15 @@ def convert_event_based(input_file, output_file, tree_name):
 
     # variables to retrieve
     varList = ['n_jet','n_fatjet','n_pho',
-               'n_ele', 'n_mu', 'n_pfcand']
+               'n_ele', 'n_mu', 'n_pfcand', 'n_bpfcand']
     common_prop = ['pt','eta','phi']
     varList += ['Electron_'+p for p in common_prop+['m']]
     varList += ['Photon_'+p for p in common_prop+['m']]
     varList += ['Muon_'+p for p in common_prop+['m']]
     varList += ['Jet_'+p for p in common_prop+['m']]
     varList += ['FatJet_'+p for p in common_prop+['mass','msoftdrop', 'mtrim']]
-    varList += ['PFcand_'+p for p in common_prop+['m']]
+    varList += ['PFcand_'+p for p in common_prop+['m','pdgid','fjidx','fromsuep']]
+    varList += ['bPFcand_'+p for p in common_prop+['m']]
 
 
     # get awkward arrays
@@ -83,6 +102,9 @@ def convert_event_based(input_file, output_file, tree_name):
     l1pho_cyl, l1pho_cart = store_objects_coordinates(arrays, nentries, nobj=nphotons, obj='Photon_')
     l1ele_cyl, l1ele_cart = store_objects_coordinates(arrays, nentries, nobj=nelectrons, obj='Electron_')
     l1pfcand_cyl, l1pfcand_cart = store_objects_coordinates(arrays, nentries, nobj=npfcands, obj='PFcand_')
+    l1pfcand_feat = store_objects_addfeatures(arrays, nentries, nobj=npfcands, obj='PFcand_')
+    l1pfcand_truth = store_objects_truth(arrays, nentries, nobj=npfcands, obj='PFcand_')
+    l1bpfcand_cyl, l1bpfcand_cart = store_objects_coordinates(arrays, nentries, nobj=npfcands, obj='bPFcand_')
 
     
     with h5py.File(output_file, 'w') as outFile:
@@ -100,6 +122,10 @@ def convert_event_based(input_file, output_file, tree_name):
         outFile.create_dataset('Pho_cart', data=l1pho_cart, compression='gzip')
         outFile.create_dataset('Pfcand_cyl', data=l1pfcand_cyl, compression='gzip')
         outFile.create_dataset('Pfcand_cart', data=l1pfcand_cart, compression='gzip')
+        outFile.create_dataset('Pfcand_feat', data=l1pfcand_feat, compression='gzip')
+        outFile.create_dataset('Pfcand_truth', data=l1pfcand_truth, compression='gzip')
+        outFile.create_dataset('bPfcand_cyl', data=l1bpfcand_cyl, compression='gzip')
+        outFile.create_dataset('bPfcand_cart', data=l1bpfcand_cart, compression='gzip')
 
 def convert_jet_based(input_file, output_file, tree_name):
     inFile = uproot.open(input_file)
@@ -107,23 +133,21 @@ def convert_jet_based(input_file, output_file, tree_name):
     nentries = l1Tree.num_entries
 
     jetFeatureNames = ['area','n2b1','n3b1','tau1','tau2','tau3','tau4','mass','msoftdrop','mtrim']
-    particleFeatureNames = ['pdgid','vertex','fjidx'] 
+    particleFeatureNames = ['pdgid','fjidx'] 
     common_prop = ['pt','eta','phi']
     jetFeatureNames += [p for p in common_prop]
     particleFeatureNames += [p for p in common_prop]
-    
 
     # variables to retrieve
     varList = ['n_pfcand','n_fatjet']
     varJets = ['FatJet_'+p for p in jetFeatureNames]
     varJets += ['n_fatjet']
-    varPfcands = ['PFcand_'+p for p in particleFeatureName+['m']]
+    varPfcands = ['PFcand_'+p for p in particleFeatureNames+['m']]
     varList+=varJets
     varList+=varPfcands
     
     # get awkward arrays
-    arrays = l1Tree.arrays(varList)
-    
+    arrays = l1Tree.arrays(varList)    
 
     jet_record = ak.zip({"FatJets": ak.zip({ name : arrays[name] for name in varJets})})#
     pfcand_record = ak.zip({"pfcands": ak.zip({ name : arrays[name] for name in varPfcands})})
@@ -134,11 +158,11 @@ def convert_jet_based(input_file, output_file, tree_name):
     #jet_record.FatJets = jet_record.FatJets[jet_record.FatJets.FatJet_pt > 0] # or we can do pt>0 , need to check the dataset
     #choose pf candidates associated to this one fat jet
     fatjetidx = 0
-    pfcand_record.pfcands = pfcand_record.pfcands[pfcand_record.pfcands.pfcandfjidx == fatjetidx]
+    pfcand_record.pfcands = pfcand_record.pfcands[pfcand_record.pfcands.PFcand_fjidx == fatjetidx]
     
     # store objects: jets, and pfcands
-    fatjets,fatjets_names = store_objects_features(jet_record.FatJets, nentries, nobj=nfatjets,obj='FatJet_')
-    pfcands,pfcands_names = store_objects_features(pfcand_record.pfcands, nentries, nobj=100,obj='pfcand')
+    fatjets,fatjets_names = store_objects_features(jet_record.FatJets, nentries, nobj=nfatjets,obj='FatJet')
+    pfcands,pfcands_names = store_objects_features(pfcand_record.pfcands, nentries, nobj=100,obj='PFcand')
 
     
     with h5py.File(output_file, 'w') as outFile:

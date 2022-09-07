@@ -198,6 +198,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	doL1 = cms.bool(False),
 	doData = cms.bool(False),
 	doSignal = cms.bool(False),
+    isMC = cms.bool(params.isMC),
     stageL1Trigger   = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
