@@ -93,6 +93,24 @@ params.setDefault(
     'outputFile', 
     'test.root' 
 )
+params.register(
+  "era",
+  "2018",
+  VarParsing.multiplicity.singleton,VarParsing.varType.string,
+  "era"
+)
+params.register(
+    'data', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not data is run'
+)
+params.register(
+    'signal', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
 
 
 
@@ -103,7 +121,7 @@ process = cms.Process("LL")
 print("Made it here")
 params.parseArguments()
 print("Not here")
-
+print("era: ",params.era)
 # Message Logger settings
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.destinations = ['cout', 'cerr']
@@ -194,10 +212,14 @@ L1Info = [
     'L1_ETT2000']
 
 # Make tree
+if(params.era == "2016"):
+  vertexinfo         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
+else:
+  vertexinfo = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	doL1 = cms.bool(False),
-	doData = cms.bool(False),
-	doSignal = cms.bool(False),
+	doData = cms.bool(params.data),
+	doSignal = cms.bool(params.signal),
     isMC = cms.bool(params.isMC),
     stageL1Trigger   = cms.uint32(2),
 
@@ -225,7 +247,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
   
     #vertices         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-    vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    vertices         = vertexinfo,
+    #vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
     pileupinfo       = cms.InputTag("addPileupInfo"),
     gens         = cms.InputTag("genParticles"),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
