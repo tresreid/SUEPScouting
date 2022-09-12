@@ -127,6 +127,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
+  const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >        pileupInfoToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   //const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
 
@@ -142,7 +143,9 @@ private:
 
   // Trigger information 
        
-  bool doL1;
+  bool doL1;       
+  bool doData;       
+  bool doSignal;       
   bool isMC;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
@@ -229,6 +232,7 @@ private:
   vector<Float16_t>     Muon_trkdszerror;
   vector<Float16_t>     Muon_trkdsz;
 
+  UInt_t PU_num;
   //PFJets
   UInt_t n_jet;
   UInt_t n_jetId;
@@ -361,10 +365,12 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
-//  pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
+  pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
+  doData                     (iConfig.existsAs<bool>("doData")               ?    iConfig.getParameter<bool>  ("doData")            : false),
+  doSignal                     (iConfig.existsAs<bool>("doSignal")               ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   isMC                     (iConfig.existsAs<bool>("isMC")               ?    iConfig.getParameter<bool>  ("isMC")            : true),
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
@@ -509,6 +515,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("ht"                         ,&ht                 );
   tree->Branch("Muon_totPt"                         ,&Muon_totPt                 );
   tree->Branch("Electron_totPt"                         ,&Electron_totPt                 );
+  tree->Branch("PU_num"            	   	    ,&PU_num 			, "PU_num/i"	  );
   tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"	  );
   tree->Branch("n_jetId"            	   	,&n_jetId 			, "n_jetId/i" );
   tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
@@ -605,6 +612,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   Handle<vector<ScoutingVertex> > verticesH;
   iEvent.getByToken(verticesToken, verticesH);
+
+  Handle<vector<PileupSummaryInfo> > puInfo;
+  iEvent.getByToken(pileupInfoToken, puInfo);
 
 
   run = iEvent.eventAuxiliary().run();
@@ -738,8 +748,18 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         Vertex_isValidVtx.push_back( vertices_iter->isValidVtx() );
         n_pvs++;
     }
-
-
+  //bool runSig = false;
+  //bool notData = true;
+  //int counter=0;
+  if (!doData) {
+    for(auto PVI = puInfo->begin(); PVI != puInfo->end(); ++PVI){
+      int pu_bunchcrossing = PVI->getBunchCrossing();
+      if(pu_bunchcrossing ==0){
+        PU_num = PVI->getTrueNumInteractions();
+      //printf("%d: %u \n",counter,PU_num);counter++;
+      }
+    }
+  }
 
 
   // * 
@@ -778,7 +798,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     daughters_used.clear();
 //////////////////////////////////////
 //new code 
-  bool rundR = false;
   vector<vector<float> > dr_vector;
   vector<PseudoJet> fj_part;
   vector<math::XYZVector> event_tracks; // all event tracks
@@ -804,7 +823,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
      Electron_totPt += pfcands_iter.pt(); 
      n_pfEl ++;
     }
-    if(rundR){
+    if(doSignal){
       Handle<vector<reco::GenParticle> > genP;
       iEvent.getByToken(gensToken, genP);
       for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
@@ -812,9 +831,12 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         if (genp_iter->charge()==0){continue;}
         
         auto dR = deltaR2(genp_iter->eta(),genp_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+
+        if(pfcands_iter.vertex() ==0){ ///////////////////EXTRA SELECTION
         dr_vector_row.push_back(dR);//fills are dR values for this pFcand and all gen
         if(dR < 0.3 && abs(genp_iter->eta()) < 2.4){
         PFcand_alldR.push_back(dR);
+        }
         }
         
       }
@@ -848,7 +870,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     n_pfcand++;
   }
 
-if(false){  //do not run for data
+if(doSignal){  //do not run for data
   Handle<vector<reco::GenParticle> > genP;
   iEvent.getByToken(gensToken, genP);
 
@@ -863,6 +885,7 @@ if(false){  //do not run for data
 
   for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
     //if(abs(genp_iter->pdgId()) ==25){ // want to take the last particle with id = 25 
+    //printf("scalar: %f %f %f %f\n",genp_iter->pt(),genp_iter->eta(),genp_iter->phi(),genp_iter->mass());
     //  scalar_pt = genp_iter->pt();
     //  scalar_eta = genp_iter->eta();
     //  scalar_phi = genp_iter->phi();
@@ -881,10 +904,11 @@ if(false){  //do not run for data
       while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
         mother = (reco::GenParticle*)mother->mother();
         if (abs(mother->pdgId())==25){
-      scalar_pt = genp_iter->pt();
-      scalar_eta = genp_iter->eta();
-      scalar_phi = genp_iter->phi();
-      scalar_m = genp_iter->mass();
+      scalar_pt  = mother->pt();
+      scalar_eta = mother->eta();
+      scalar_phi = mother->phi();
+      scalar_m   = mother->mass();
+      //printf("scalarx: %f %f %f %f\n", mother->pt(), mother->eta(), mother->phi(),mother->mass());
           fromsuep = true;
           break;
         }
@@ -892,7 +916,7 @@ if(false){  //do not run for data
       truth_fromSuep.push_back(fromsuep);
   }
 }
-if(rundR){  //do not run for other samples to save time
+if(doSignal){  //do not run for other samples to save time
   // 1 to 1 gen matching
   std::vector<int> used_pf;
   std::vector<int> used_gen;
