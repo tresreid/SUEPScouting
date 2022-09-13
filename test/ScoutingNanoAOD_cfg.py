@@ -187,9 +187,11 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-from RecoJets.JetProducers.fixedGridRhoProducerFastjet_cfi import fixedGridRhoFastjetAll
-process.fixedGridRhoFastjetAllScouting = fixedGridRhoFastjetAll.clone(
-    pfCandidatesTag = cms.InputTag("hltScoutingPFPacker")
+process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
+    pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
+    electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
+    maxRapidity = cms.double(5.0),
+    gridSpacing = cms.double(0.55),
 )
 
 HLTInfo = [
