@@ -130,6 +130,7 @@ private:
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >        pileupInfoToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   //const edm::EDGetTokenT<GenEventInfoProduct>               genEvtInfoToken;
+  const edm::EDGetTokenT<double>  	rhoToken;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
@@ -332,6 +333,8 @@ private:
   vector<Float16_t> Vertex_ndof;
   vector<Float16_t> Vertex_isValidVtx;
 
+  float rho;
+
   // Event shape variables
   float event_isotropy;
   float event_circularity;
@@ -367,6 +370,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
   pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
+  rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   doL1                     (iConfig.existsAs<bool>("doL1")               ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                     (iConfig.existsAs<bool>("doData")               ?    iConfig.getParameter<bool>  ("doData")            : false),
@@ -560,6 +564,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("FatJet_msoftdrop"   ,&FatJet_msoftdrop);
   tree->Branch("FatJet_mtrim"       ,&FatJet_mtrim    );
   tree->Branch("FatJet_nconst"      ,&FatJet_nconst   );
+
+  tree->Branch("rho", &rho);
 
   tree->Branch("event_isotropy"        ,&event_isotropy     );
   tree->Branch("event_circularity"     ,&event_circularity  );
@@ -1256,6 +1262,10 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
     PFcand_fjidx.push_back(tmpidx);
     n_pfcand_tot++;
   }
+
+  Handle<double> rhoH;
+  iEvent.getByToken(rhoToken, rhoH);
+  rho = *rhoH;
 
  // done for all events, no need to reset?
  EventShapeVariables event_algo(event_tracks);

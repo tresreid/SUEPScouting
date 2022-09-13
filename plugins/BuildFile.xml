@@ -6,6 +6,8 @@
 <use name="FWCore/ServiceRegistry"/>
 <use name="JetMETCorrections/Algorithms"/>
 <use name="HLTrigger/HLTcore"/>
+<use name="DataFormats/Math"/>
+<use name="DataFormats/Scouting"/>
 <use name="fastjet"/>
 <use name="fastjet-contrib"/>
 <use name="root"/>
