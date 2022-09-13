@@ -2,9 +2,7 @@
 ```
 cmsrel CMSSW_10_6_0 #you can use CMSSW_11_1_0
 cd CMSSW_10_6_0/src
-mkdir PhysicsTools
-cd PhysicsTools
-git clone -b mods https://github.com/SUEPPhysics/SUEPScouting.git 
+git clone -b mods https://github.com/SUEPPhysics/SUEPScouting.git PhysicsTools/SUEPScouting
 ```
 
 # To setup and compile
