@@ -186,6 +186,11 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
     useLHEWeights = cms.bool(params.useWeights)
 )
 
+# get rho producer
+from RecoJets.JetProducers.fixedGridRhoProducerFastjet_cfi import fixedGridRhoFastjetAll
+process.fixedGridRhoFastjetAllScouting = fixedGridRhoFastjetAll.clone(
+    pfCandidatesTag = cms.InputTag("hltScoutingPFPacker")
+)
 
 HLTInfo = [
   "DST_DoubleMu1_noVtx_CaloScouting_v*",
@@ -216,6 +221,7 @@ if(params.era == "2016"):
   vertexinfo         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
 else:
   vertexinfo = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
+
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	doL1 = cms.bool(False),
 	doData = cms.bool(params.data),
@@ -253,6 +259,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     gens         = cms.InputTag("genParticles"),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
     #geneventinfo     = cms.InputTag("generator"),
+    rho          = cms.InputTag("fixedGridRhoFastjetAllScouting"),
 
     # for JEC corrections eventually
     #L1corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L1FastJet_AK4CaloHLT.txt'),
@@ -261,4 +268,9 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 )
 #process.Tracer = cms.Service("Tracer")
 
+# add any intermediate modules to this task list
+# then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
+process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
+
 process.p = cms.Path(                  process.mmtree)
+process.p.associate(process.myTask)
