@@ -262,6 +262,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
     #geneventinfo     = cms.InputTag("generator"),
     rho          = cms.InputTag("fixedGridRhoFastjetAllScouting"),
+    rho2          = cms.InputTag("hltScoutingPFPacker","rho"),
 
     # for JEC corrections eventually
     #L1corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L1FastJet_AK4CaloHLT.txt'),
