@@ -2,8 +2,6 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils
 import os
 
-
-
 # Set parameters externally 
 from FWCore.ParameterSet.VarParsing import VarParsing
 params = VarParsing('analysis')
@@ -112,16 +110,12 @@ params.register(
     'Flag to indicate whether or not signal is run'
 )
 
-
-
 # Define the process
 process = cms.Process("LL")
 
 # Parse command line arguments
-print("Made it here")
 params.parseArguments()
-print("Not here")
-print("era: ",params.era)
+
 # Message Logger settings
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.destinations = ['cout', 'cerr']
@@ -175,8 +169,6 @@ else :
 # Define the services needed for the treemaker
 process.TFileService = cms.Service("TFileService", 
     fileName = cms.string(params.outputFile)
-    #fileName = cms.string("scoutingData18.root")
-    #fileName = cms.string("scoutingQCD500to700.root")
 )
 
 # Tree for the generator weights
@@ -220,54 +212,52 @@ L1Info = [
 
 # Make tree
 if(params.era == "2016"):
-  vertexinfo         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
+  vertexinfo          = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
 else:
-  vertexinfo = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
+  vertexinfo          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
 
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
-	doL1 = cms.bool(False),
-	doData = cms.bool(params.data),
-	doSignal = cms.bool(params.signal),
-    isMC = cms.bool(params.isMC),
-    stageL1Trigger   = cms.uint32(2),
+    doL1              = cms.bool(False),
+    doData            = cms.bool(params.data),
+    doSignal          = cms.bool(params.signal),
+    isMC              = cms.bool(params.isMC),
+    stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
-    bits          = cms.InputTag("TriggerResults", "", "HLT"),
+    bits              = cms.InputTag("TriggerResults", "", "HLT"),
     
     triggerresults   = cms.InputTag("TriggerResults", "", params.trigProcess),
     triggerConfiguration = cms.PSet(
-    	hltResults            = cms.InputTag('TriggerResults','','HLT'),
-    	l1tResults            = cms.InputTag(''),
-    	daqPartitions         = cms.uint32(1),
+    	hltResults               = cms.InputTag('TriggerResults','','HLT'),
+    	l1tResults               = cms.InputTag(''),
+    	daqPartitions            = cms.uint32(1),
     	l1tIgnoreMaskAndPrescale = cms.bool(False),
-    	throw                 = cms.bool(False)
+    	throw                    = cms.bool(False)
   	),
-	ReadPrescalesFromFile = cms.bool( False ),
+    ReadPrescalesFromFile = cms.bool( False ),
     AlgInputTag = cms.InputTag("gtStage2Digis"),
     l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
     l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
     l1Seeds           = cms.vstring(L1Info),
     hltSeeds          = cms.vstring(HLTInfo),
-	muons            = cms.InputTag("hltScoutingMuonPacker"),
-	electrons        = cms.InputTag("hltScoutingEgammaPacker"),
-    photons          = cms.InputTag("hltScoutingEgammaPacker"),
-	pfcands          = cms.InputTag("hltScoutingPFPacker"),
-	pfjets           = cms.InputTag("hltScoutingPFPacker"),
-  
-    #vertices         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-    vertices         = vertexinfo,
-    #vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
-    pileupinfo       = cms.InputTag("addPileupInfo"),
-    gens         = cms.InputTag("genParticles"),
-	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
+    muons             = cms.InputTag("hltScoutingMuonPacker"),
+    electrons         = cms.InputTag("hltScoutingEgammaPacker"),
+    photons           = cms.InputTag("hltScoutingEgammaPacker"),
+    pfcands           = cms.InputTag("hltScoutingPFPacker"),
+    pfjets            = cms.InputTag("hltScoutingPFPacker"),
+    #vertices          = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
+    vertices          = vertexinfo,
+    #vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    pileupinfo        = cms.InputTag("addPileupInfo"),
+    gens              = cms.InputTag("genParticles"),
     #geneventinfo     = cms.InputTag("generator"),
-    rho          = cms.InputTag("fixedGridRhoFastjetAllScouting"),
-    rho2          = cms.InputTag("hltScoutingPFPacker","rho"),
+    rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
+    rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
 
     # for JEC corrections eventually
-    #L1corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L1FastJet_AK4CaloHLT.txt'),
-    #L2corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L2Relative_AK4CaloHLT.txt'),
-    #L3corrAK4_DATA = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L3Absolute_AK4CaloHLT.txt'),
+    #L1corrAK4_DATA    = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L1FastJet_AK4CaloHLT.txt'),
+    #L2corrAK4_DATA    = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L2Relative_AK4CaloHLT.txt'),
+    #L3corrAK4_DATA    = cms.FileInPath('CMSDIJET/DijetScoutingRootTreeMaker/data/80X_dataRun2_HLT_v12/80X_dataRun2_HLT_v12_L3Absolute_AK4CaloHLT.txt'),
 )
 #process.Tracer = cms.Service("Tracer")
 
@@ -275,5 +265,5 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
 process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
-process.p = cms.Path(                  process.mmtree)
+process.p = cms.Path(process.mmtree)
 process.p.associate(process.myTask)
