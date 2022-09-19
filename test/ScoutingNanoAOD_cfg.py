@@ -19,12 +19,6 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not to use the events weights from a Monte Carlo generator'
 )
-#params.register(
-#    'doJEC', 
-#    False, 
-#    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-#    'Flag to indicate whether or not to use the events weights from a Monte Carlo generator'
-#)
 
 params.register(
     'filterTrigger', 
@@ -75,6 +69,7 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.float,
     'Cross-section for a Monte Carlo Sample'
 )#fix this
+
 params.register(
     'fileList', 
     'none', 
@@ -84,25 +79,21 @@ params.register(
 
 params.setDefault(
     'maxEvents', 
-    100000000
+    -1
 )
 
 params.setDefault(
     'outputFile', 
     'test.root' 
 )
+
 params.register(
   "era",
   "2018",
   VarParsing.multiplicity.singleton,VarParsing.varType.string,
   "era"
 )
-params.register(
-    'data', 
-    False, 
-    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-    'Flag to indicate whether or not data is run'
-)
+
 params.register(
     'signal', 
     False, 
@@ -129,6 +120,9 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.options = cms.untracked.PSet( 
     allowUnscheduled = cms.untracked.bool(True),
     wantSummary      = cms.untracked.bool(True),
+    Rethrow = cms.untracked.vstring("ProductNotFound"), # make this exception fatal
+    #Rethrow = cms.untracked.vstring()
+    FailPath = cms.untracked.vstring("ProductNotFound")
     #SkipEvent = cms.untracked.vstring('ProductNotFound')
 )
 
@@ -139,11 +133,9 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(params.maxEv
 #list = FileUtils.loadListFromFile(options.inputFiles)
 #readFiles = cms.untracked.vstring(*list)
 
-print("reading files?")
 if params.fileList == "none" : readFiles = params.inputFiles
 else : 
     readFiles = cms.untracked.vstring( FileUtils.loadListFromFile (os.environ['CMSSW_BASE']+'/src/PhysicsTools/ScoutingNanoAOD/test/'+params.fileList) )
-print("we shall see")
 process.source = cms.Source("PoolSource",
 	fileNames = cms.untracked.vstring(readFiles) 
 )
@@ -187,14 +179,14 @@ process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFas
 )
 
 HLTInfo = [
-  "DST_DoubleMu1_noVtx_CaloScouting_v*",
-  "DST_DoubleMu3_noVtx_CaloScouting_v*",
-  "DST_DoubleMu3_noVtx_Mass10_PFScouting_v*",
-  "DST_L1HTT_CaloScouting_PFScouting_v*",
-  "DST_CaloJet40_CaloScouting_PFScouting_v*",
-  "DST_HT250_CaloScouting_v*",
-  "DST_HT410_PFScouting_v*",
-  "DST_HT450_PFScouting_v*"]
+    "DST_DoubleMu1_noVtx_CaloScouting_v*",
+    "DST_DoubleMu3_noVtx_CaloScouting_v*",
+    "DST_DoubleMu3_noVtx_Mass10_PFScouting_v*",
+    "DST_L1HTT_CaloScouting_PFScouting_v*",
+    "DST_CaloJet40_CaloScouting_PFScouting_v*",
+    "DST_HT250_CaloScouting_v*",
+    "DST_HT410_PFScouting_v*",
+    "DST_HT450_PFScouting_v*"]
 L1Info = [
     'L1_HTT200er',
     'L1_HTT255er',
@@ -210,15 +202,9 @@ L1Info = [
     'L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5',
     'L1_ETT2000']
 
-# Make tree
-if(params.era == "2016"):
-  vertexinfo          = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-else:
-  vertexinfo          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
-
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doL1              = cms.bool(False),
-    doData            = cms.bool(params.data),
+    doData            = cms.bool(not params.isMC),
     doSignal          = cms.bool(params.signal),
     isMC              = cms.bool(params.isMC),
     stageL1Trigger    = cms.uint32(2),
@@ -245,9 +231,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     photons           = cms.InputTag("hltScoutingEgammaPacker"),
     pfcands           = cms.InputTag("hltScoutingPFPacker"),
     pfjets            = cms.InputTag("hltScoutingPFPacker"),
-    #vertices          = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-    vertices          = vertexinfo,
-    #vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
+    vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     gens              = cms.InputTag("genParticles"),
     #geneventinfo     = cms.InputTag("generator"),
