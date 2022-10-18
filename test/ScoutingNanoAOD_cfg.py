@@ -121,7 +121,7 @@ process = cms.Process("LL")
 print("Made it here")
 params.parseArguments()
 print("Not here")
-print("era: ",params.era)
+print("era: %s Data:%s signal:%s"%(params.era, params.data, params.signal))
 # Message Logger settings
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.destinations = ['cout', 'cerr']
@@ -223,6 +223,15 @@ if(params.era == "2016"):
   vertexinfo         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
 else:
   vertexinfo = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
+if(params.signal):
+    pileupinfox       = cms.InputTag("slimmedAddPileupInfo")
+    gensx         = cms.InputTag("prunedGenParticles")
+    #pileupinfox       = cms.InputTag("addPileupInfo")
+    #gensx         = cms.InputTag("genParticles")
+else:
+    pileupinfox       = cms.InputTag("addPileupInfo")
+    gensx         = cms.InputTag("genParticles")
+
 
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	doL1 = cms.bool(False),
@@ -251,14 +260,17 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	muons            = cms.InputTag("hltScoutingMuonPacker"),
 	electrons        = cms.InputTag("hltScoutingEgammaPacker"),
     photons          = cms.InputTag("hltScoutingEgammaPacker"),
+	tracks          = cms.InputTag("generalTracks"),
 	pfcands          = cms.InputTag("hltScoutingPFPacker"),
 	pfjets           = cms.InputTag("hltScoutingPFPacker"),
   
     #vertices         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
     vertices         = vertexinfo,
     #vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
-    pileupinfo       = cms.InputTag("addPileupInfo"),
-    gens         = cms.InputTag("genParticles"),
+    pileupinfo       = pileupinfox, #cms.InputTag("slimmedAddPileupInfo"),
+    #pileupinfo       = cms.InputTag("addPileupInfo"),
+    gens         = gensx, #cms.InputTag("prunedGenParticles"),
+    #gens         = cms.InputTag("genParticles"),
 	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
     #geneventinfo     = cms.InputTag("generator"),
     rho          = cms.InputTag("fixedGridRhoFastjetAllScouting"),

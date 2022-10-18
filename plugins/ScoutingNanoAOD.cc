@@ -65,6 +65,8 @@
 
 #include "DataFormats/Math/interface/libminifloat.h"
 
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+
 // Root include files
 #include "TLorentzVector.h"
 #include "TFile.h"
@@ -124,6 +126,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingMuon> >        muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
+  const edm::EDGetTokenT<std::vector<reco::Track> >  	tracksToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
@@ -267,6 +270,24 @@ private:
   vector<Float16_t>  	Jet_nConstituents;
   vector<bool> Jet_passId;
 
+  vector<Float16_t> offlineTrack_pt;
+  vector<Float16_t> offlineTrack_eta;
+  vector<Float16_t> offlineTrack_phi;
+  vector<Float16_t> offlineTrack_dR;
+  vector<Float16_t> offlineTrack_dz;
+  vector<bool> offlineTrack_paired;
+  vector<Float16_t> offlineTrack_PFcandpt;
+  vector<Float16_t> offlineTrack_PFcandeta;
+  vector<Float16_t> offlineTrack_PFcandphi;
+  float offline_count;
+  float offlinematched_count;
+  float offline_frac;
+  float offline_countHi;
+  float offlinematched_countHi;
+  float offline_fracHi;
+  float offline_countLo;
+  float offlinematched_countLo;
+  float offline_fracLo;
   //PFCand
   UInt_t n_pfcand;
   UInt_t n_pfMu;
@@ -367,6 +388,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   muonsToken               (consumes<std::vector<ScoutingMuon> >             (iConfig.getParameter<edm::InputTag>("muons"))), 
   electronsToken           (consumes<std::vector<ScoutingElectron> >         (iConfig.getParameter<edm::InputTag>("electrons"))), 
   photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
+  tracksToken             (consumes<std::vector<reco::Track> >         (iConfig.getParameter<edm::InputTag>("tracks"))), 
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
@@ -442,6 +464,25 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Photon_ecaliso"            ,&Photon_ecaliso 		);
   tree->Branch("Photon_HoE"            	   ,&Photon_HoE 			);
   tree->Branch("Photon_sigmaietaieta"      ,&Photon_sigmaietaieta	);
+
+  tree->Branch("offline_frac"        	       ,&offline_frac		 );
+  tree->Branch("offline_count"        	       ,&offline_count		 );
+  tree->Branch("offlinematched_count"            	   ,&offlinematched_count 	 );
+  tree->Branch("offline_fracHi"        	       ,&offline_fracHi		 );
+  tree->Branch("offline_countHi"        	       ,&offline_countHi		 );
+  tree->Branch("offlinematched_countHi"            	   ,&offlinematched_countHi 	 );
+  tree->Branch("offline_fracLo"        	       ,&offline_fracLo		 );
+  tree->Branch("offline_countLo"        	       ,&offline_countLo		 );
+  tree->Branch("offlinematched_countLo"            	   ,&offlinematched_countLo 	 );
+  tree->Branch("offlineTrack_pt"        	       ,&offlineTrack_pt 		 );
+  tree->Branch("offlineTrack_eta"            	   ,&offlineTrack_eta 	 );
+  tree->Branch("offlineTrack_phi"            	   ,&offlineTrack_phi		 );
+  tree->Branch("offlineTrack_dR"            	   ,&offlineTrack_dR		 );
+  tree->Branch("offlineTrack_dz"            	   ,&offlineTrack_dz		 );
+  tree->Branch("offlineTrack_paired"            	   ,&offlineTrack_paired		 );
+  tree->Branch("offlineTrack_PFcandpt"        	       ,&offlineTrack_PFcandpt 		 );
+  tree->Branch("offlineTrack_PFcandeta"            	   ,&offlineTrack_PFcandeta 	 );
+  tree->Branch("offlineTrack_PFcandphi"            	   ,&offlineTrack_PFcandphi		 );
 
   tree->Branch("n_pfcand"            	   ,&n_pfcand 		,"n_pfcand/i"		);	
   tree->Branch("n_pfMu"            	   ,&n_pfMu 		,"n_pfMu/i"		);	
@@ -617,6 +658,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingPFJet> > pfjetsH;
   iEvent.getByToken(pfjetsToken, pfjetsH);
     
+//  Handle<vector<reco::Track> > tracksH;
+//  iEvent.getByToken(tracksToken, tracksH);
+
   Handle<vector<ScoutingParticle> > pfcandsH;
   iEvent.getByToken(pfcandsToken, pfcandsH);
 
@@ -777,6 +821,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // *
 
 
+
+
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
       ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
@@ -790,6 +836,78 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     std::sort(PFcands.begin(), PFcands.end(), custompT);
 
+//    offlineTrack_pt.clear();
+//    offlineTrack_eta.clear();
+//    offlineTrack_phi.clear();
+//    offlineTrack_dR.clear();
+//    offlineTrack_dz.clear();
+//    offlineTrack_paired.clear();
+//    offlineTrack_PFcandpt.clear();
+//    offlineTrack_PFcandeta.clear();
+//    offlineTrack_PFcandphi.clear();
+//    offlinematched_count =0;
+//    offline_count =0;
+//    offline_frac =0;
+//    offlinematched_countHi =0;
+//    offline_countHi =0;
+//    offline_fracHi =0;
+//    offlinematched_countLo =0;
+//    offline_countLo =0;
+//    offline_fracLo =0;
+//    for (auto tracks_iter = tracksH->begin(); tracks_iter != tracksH->end(); ++tracks_iter) {
+//      if (tracks_iter->pt() < 0.5) continue;
+//      if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+//      if (abs(tracks_iter->charge()) != 1 ) continue;
+//    
+//
+//      offlineTrack_pt.push_back(tracks_iter->pt()); 
+//      offlineTrack_eta.push_back(tracks_iter->eta()); 
+//      offlineTrack_phi.push_back(tracks_iter->phi()); 
+//      offlineTrack_dz.push_back(tracks_iter->dz()); 
+//      float mindR = 9999;
+//      bool isMatched = false;
+//      float matched_pt =0;
+//      float matched_eta =0;
+//      float matched_phi =0;
+//      for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
+//        if (pfcands_iter.pt() < 0.5) continue;
+//        if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+//        if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
+//        auto dR = deltaR2(tracks_iter->eta(),tracks_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+//        if (dR < mindR){
+//          mindR = dR;
+//          matched_pt = pfcands_iter.pt();
+//          matched_eta = pfcands_iter.eta();
+//          matched_phi = pfcands_iter.phi();
+//        }
+//      }
+//      offlineTrack_dR.push_back(mindR);
+//      if(mindR < 0.02){
+//        isMatched = true;
+//        offlinematched_count++;
+//        if(tracks_iter->pt()>20){
+//          offlinematched_countHi++;
+//        }else{
+//          offlinematched_countLo++;
+//        }
+//
+//      }
+//      offlineTrack_paired.push_back(isMatched);
+//      offlineTrack_PFcandpt.push_back(matched_pt);
+//      offlineTrack_PFcandeta.push_back(matched_eta);
+//      offlineTrack_PFcandphi.push_back(matched_phi);
+//      offline_count++;
+//      if(tracks_iter->pt()>20){
+//        offline_countHi++;
+//      }else{
+//        offline_countLo++;
+//      }
+//      //printf("track_pt %f\n",track_pt);
+//    }
+//    offline_frac = offlinematched_count/offline_count;
+//    offline_fracHi = offlinematched_countHi/offline_countHi;
+//    offline_fracLo = offlinematched_countLo/offline_countLo;
+    
 
     PFcand_pt.clear();
     PFcand_eta.clear();
@@ -833,6 +951,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
      Electron_totPt += pfcands_iter.pt(); 
      n_pfEl ++;
     }
+
     if(doSignal){
       Handle<vector<reco::GenParticle> > genP;
       iEvent.getByToken(gensToken, genP);
@@ -842,12 +961,12 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         
         auto dR = deltaR2(genp_iter->eta(),genp_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
 
-        if(pfcands_iter.vertex() ==0){ ///////////////////EXTRA SELECTION
+        //if(pfcands_iter.vertex() ==0){ ///////////////////EXTRA SELECTION
         dr_vector_row.push_back(dR);//fills are dR values for this pFcand and all gen
         if(dR < 0.3 && abs(genp_iter->eta()) < 2.4){
         PFcand_alldR.push_back(dR);
         }
-        }
+        //}
         
       }
       dr_vector.push_back(dr_vector_row);// makes matrix of all pFcand-gen dR values
@@ -913,7 +1032,7 @@ if(doSignal){  //do not run for data
       reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
       while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
         mother = (reco::GenParticle*)mother->mother();
-        if (abs(mother->pdgId())==25){
+        if (abs(mother->pdgId())==25){// && (mother->status() ==62){
       scalar_pt  = mother->pt();
       scalar_eta = mother->eta();
       scalar_phi = mother->phi();
