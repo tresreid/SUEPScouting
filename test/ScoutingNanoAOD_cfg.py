@@ -111,6 +111,12 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not signal is run'
 )
+params.register(
+    'killtrk', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
 
 
 
@@ -237,6 +243,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 	doL1 = cms.bool(False),
 	doData = cms.bool(params.data),
 	doSignal = cms.bool(params.signal),
+	runOffline = cms.bool(params.killtrk),
     isMC = cms.bool(params.isMC),
     stageL1Trigger   = cms.uint32(2),
 
