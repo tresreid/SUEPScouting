@@ -65,6 +65,8 @@
 
 #include "DataFormats/Math/interface/libminifloat.h"
 
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+
 // Root include files
 #include "TLorentzVector.h"
 #include "TFile.h"
@@ -124,6 +126,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingMuon> >            muonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingElectron> >  	electronsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
+  const edm::EDGetTokenT<std::vector<reco::Track> >  	tracksToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
@@ -146,6 +149,7 @@ private:
   bool doL1;       
   bool doData;       
   bool doSignal;       
+  bool runOffline;       
   bool isMC;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
@@ -264,6 +268,28 @@ private:
   vector<Float16_t>  	       Jet_nConstituents;
   vector<bool>                 Jet_passId;
 
+  vector<Float16_t> offlineTrack_pt;
+  vector<Float16_t> offlineTrack_eta;
+  vector<Float16_t> offlineTrack_phi;
+  vector<Float16_t> offlineTrack_dR;
+  vector<Float16_t> offlineTrack_dz;
+  vector<bool> offlineTrack_paired;
+  vector<Float16_t> offlineTrack_PFcandpt;
+  vector<Float16_t> offlineTrack_PFcandeta;
+  vector<Float16_t> offlineTrack_PFcandphi;
+  vector<Float16_t> onlineTrack_dR;
+  vector<Float16_t> onlineTrack_offlinept;
+  vector<Float16_t> onlineTrack_offlineeta;
+  vector<Float16_t> onlineTrack_offlinephi;
+  float offline_count;
+  float offlinematched_count;
+  float offline_frac;
+  float offline_countHi;
+  float offlinematched_countHi;
+  float offline_fracHi;
+  float offline_countLo;
+  float offlinematched_countLo;
+  float offline_fracLo;
   //PFCand
   UInt_t                       n_pfcand;
   UInt_t                       n_pfMu;
@@ -364,6 +390,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   muonsToken               (consumes<std::vector<ScoutingMuon> >             (iConfig.getParameter<edm::InputTag>("muons"))), 
   electronsToken           (consumes<std::vector<ScoutingElectron> >         (iConfig.getParameter<edm::InputTag>("electrons"))), 
   photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
+  tracksToken             (consumes<std::vector<reco::Track> >         (iConfig.getParameter<edm::InputTag>("tracks"))), 
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
@@ -432,121 +459,147 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Electron_ooEMOop"               ,&Electron_ooEMOop              );
 
   //Photons
-  tree->Branch("n_pho"            	        ,&n_pho 			,"n_pho/i");
-  tree->Branch("Photon_pt"            	        ,&Photon_pt                     );
-  tree->Branch("Photon_eta"            	        ,&Photon_eta                    );
-  tree->Branch("Photon_phi"            	        ,&Photon_phi                    );	
-  tree->Branch("Photon_m"            	        ,&Photon_m 	                );
-  tree->Branch("Photon_hcaliso"                 ,&Photon_hcaliso 		);
-  tree->Branch("Photon_ecaliso"                 ,&Photon_ecaliso 		);
-  tree->Branch("Photon_HoE"            	        ,&Photon_HoE                    );
-  tree->Branch("Photon_sigmaietaieta"           ,&Photon_sigmaietaieta	        );
 
-  tree->Branch("n_pfcand"            	        ,&n_pfcand 		        ,"n_pfcand/i");	
-  tree->Branch("n_pfMu"            	        ,&n_pfMu 		        ,"n_pfMu/i");	
-  tree->Branch("n_pfEl"            	        ,&n_pfEl 		        ,"n_pfEl/i");	
-  tree->Branch("PFcand_pt"        	        ,&PFcand_pt 		        );
-  tree->Branch("PFcand_eta"            	        ,&PFcand_eta 	                );
-  tree->Branch("PFcand_phi"            	        ,&PFcand_phi		        );
-  tree->Branch("PFcand_m"            	        ,&PFcand_m 		        );
-  tree->Branch("PFcand_pdgid"                   ,&PFcand_pdgid                  );
-  tree->Branch("PFcand_q"                       ,&PFcand_q                      );
-  tree->Branch("PFcand_vertex"                  ,&PFcand_vertex                 );
-  tree->Branch("PFcand_fjidx"                   ,&PFcand_fjidx 	                );
-  tree->Branch("PFcand_fromsuep"                ,&PFcand_fromsuep               );
-  tree->Branch("PFcand_dR"        	        ,&PFcand_dR 	                );
-  tree->Branch("PFcand_alldR"        	        ,&PFcand_alldR 	                );
+  tree->Branch("n_pho"            	       ,&n_pho 			, "n_pho/i"		);
+  tree->Branch("Photon_pt"            	   ,&Photon_pt 			    );
+  tree->Branch("Photon_eta"            	   ,&Photon_eta 			);
+  tree->Branch("Photon_phi"            	   ,&Photon_phi 			);	
+  tree->Branch("Photon_m"            	   ,&Photon_m 			    );
+  tree->Branch("Photon_hcaliso"            ,&Photon_hcaliso 		);
+  tree->Branch("Photon_ecaliso"            ,&Photon_ecaliso 		);
+  tree->Branch("Photon_HoE"            	   ,&Photon_HoE 			);
+  tree->Branch("Photon_sigmaietaieta"      ,&Photon_sigmaietaieta	);
 
-  tree->Branch("n_bpfcand"            	        ,&n_bpfcand 		        ,"n_bpfcand/i");	
-  tree->Branch("bPFcand_pt"        	        ,&bPFcand_pt                    );
-  tree->Branch("bPFcand_eta"                    ,&bPFcand_eta                   );
-  tree->Branch("bPFcand_phi"                    ,&bPFcand_phi                   );
-  tree->Branch("bPFcand_m"            	        ,&bPFcand_m                     );
-  tree->Branch("bPFcand_pdgid"                  ,&bPFcand_pdgid                 );
+  tree->Branch("offline_frac"        	       ,&offline_frac		 );
+  tree->Branch("offline_count"        	       ,&offline_count		 );
+  tree->Branch("offlinematched_count"            	   ,&offlinematched_count 	 );
+  tree->Branch("offline_fracHi"        	       ,&offline_fracHi		 );
+  tree->Branch("offline_countHi"        	       ,&offline_countHi		 );
+  tree->Branch("offlinematched_countHi"            	   ,&offlinematched_countHi 	 );
+  tree->Branch("offline_fracLo"        	       ,&offline_fracLo		 );
+  tree->Branch("offline_countLo"        	       ,&offline_countLo		 );
+  tree->Branch("offlinematched_countLo"            	   ,&offlinematched_countLo 	 );
+  tree->Branch("offlineTrack_pt"        	       ,&offlineTrack_pt 		 );
+  tree->Branch("offlineTrack_eta"            	   ,&offlineTrack_eta 	 );
+  tree->Branch("offlineTrack_phi"            	   ,&offlineTrack_phi		 );
+  tree->Branch("offlineTrack_dR"            	   ,&offlineTrack_dR		 );
+  tree->Branch("offlineTrack_dz"            	   ,&offlineTrack_dz		 );
+  tree->Branch("offlineTrack_paired"            	   ,&offlineTrack_paired		 );
+  tree->Branch("offlineTrack_PFcandpt"        	       ,&offlineTrack_PFcandpt 		 );
+  tree->Branch("offlineTrack_PFcandeta"            	   ,&offlineTrack_PFcandeta 	 );
+  tree->Branch("offlineTrack_PFcandphi"            	   ,&offlineTrack_PFcandphi		 );
+  tree->Branch("onlineTrack_dR"            	   ,&onlineTrack_dR		 );
+  tree->Branch("onlineTrack_offlinept"        	       ,&onlineTrack_offlinept 		 );
+  tree->Branch("onlineTrack_offlineeta"            	   ,&onlineTrack_offlineeta 	 );
+  tree->Branch("onlineTrack_offlinephi"            	   ,&onlineTrack_offlinephi		 );
 
-  tree->Branch("scalar_pt"                      ,&scalar_pt                     );
-  tree->Branch("scalar_eta"                     ,&scalar_eta                    );
-  tree->Branch("scalar_phi"                     ,&scalar_phi                    );
-  tree->Branch("scalar_m"                       ,&scalar_m                      );
-  tree->Branch("gen_pt"                         ,&truth_pts                     );
-  tree->Branch("gen_eta"                        ,&truth_etas                    );
-  tree->Branch("gen_phi"                        ,&truth_phis                    );
-  tree->Branch("gen_mass"                       ,&truth_mass                    );
-  tree->Branch("gen_dR"                         ,&truth_dR                      );
-  tree->Branch("gen_fromSuep"                   ,&truth_fromSuep                );
-  tree->Branch("gen_PV"                         ,&truth_PV                      );
-  tree->Branch("gen_PVdZ"                       ,&truth_PVdZ                    );
+  tree->Branch("n_pfcand"            	   ,&n_pfcand 		,"n_pfcand/i"		);	
+  tree->Branch("n_pfMu"            	   ,&n_pfMu 		,"n_pfMu/i"		);	
+  tree->Branch("n_pfEl"            	   ,&n_pfEl 		,"n_pfEl/i"		);	
+  tree->Branch("PFcand_pt"        	       ,&PFcand_pt 		 );
+  tree->Branch("PFcand_eta"            	   ,&PFcand_eta 	 );
+  tree->Branch("PFcand_phi"            	   ,&PFcand_phi		 );
+  tree->Branch("PFcand_m"            	   ,&PFcand_m 		 );
+  tree->Branch("PFcand_pdgid"              ,&PFcand_pdgid	 );
+  tree->Branch("PFcand_q"              ,&PFcand_q	 );
+  tree->Branch("PFcand_vertex"             ,&PFcand_vertex 	 );
+  tree->Branch("PFcand_fjidx"             ,&PFcand_fjidx 	 );
+  tree->Branch("PFcand_fromsuep"             ,&PFcand_fromsuep 	 );
+  tree->Branch("PFcand_dR"        	       ,&PFcand_dR 		 );
+  tree->Branch("PFcand_alldR"        	       ,&PFcand_alldR 		 );
 
-  tree->Branch("n_pvs"            	        ,&n_pvs                         ,"n_pvs/i");	
-  tree->Branch("Vertex_x"        	        ,&Vertex_x  		        );
-  tree->Branch("Vertex_y"                       ,&Vertex_y   	                );
-  tree->Branch("Vertex_z"                       ,&Vertex_z  		        );
-  tree->Branch("Vertex_tracksSize"              ,&Vertex_tracksSize 	        );
-  tree->Branch("Vertex_chi2"                    ,&Vertex_chi2	                );
-  tree->Branch("Vertex_ndof"                    ,&Vertex_ndof	                );
-  tree->Branch("Vertex_isValidVtx"              ,&Vertex_isValidVtx 	        );
+  tree->Branch("n_bpfcand"            	   ,&n_bpfcand 		,"n_bpfcand/i"		);	
+  tree->Branch("bPFcand_pt"        	       ,&bPFcand_pt 		 );
+  tree->Branch("bPFcand_eta"            	   ,&bPFcand_eta 	 );
+  tree->Branch("bPFcand_phi"            	   ,&bPFcand_phi		 );
+  tree->Branch("bPFcand_m"            	   ,&bPFcand_m 		 );
+  tree->Branch("bPFcand_pdgid"              ,&bPFcand_pdgid	 );
 
-  tree->Branch("n_mu"            	        ,&n_mu 	                        ,"n_mu/i");
-  tree->Branch("Muon_pt"                        ,&Muon_pt                       );
-  tree->Branch("Muon_eta"                       ,&Muon_eta                      );
-  tree->Branch("Muon_phi"                       ,&Muon_phi                      );
-  tree->Branch("Muon_m"                         ,&Muon_m                        );
-  tree->Branch("Muon_ecaliso"                   ,&Muon_ecaliso                  );
-  tree->Branch("Muon_hcaliso"                   ,&Muon_hcaliso                  );
-  tree->Branch("Muon_trkiso"                    ,&Muon_trkiso                   );
-  tree->Branch("Muon_chi2"                      ,&Muon_chi2                     );
-  tree->Branch("Muon_ndof"                      ,&Muon_ndof                     );
-  tree->Branch("Muon_charge"                    ,&Muon_charge	                );
-  tree->Branch("Muon_dxy"                       ,&Muon_dxy                      );
-  tree->Branch("Muon_dz"                        ,&Muon_dz                       );
-  tree->Branch("Muon_nvalidmuon_hits"           ,&Muon_nvalidmuon_hits          );
-  tree->Branch("Muon_validpixelhits"            ,&Muon_nvalidpixelhits          );
-  tree->Branch("Muon_nmatchedstations"          ,&Muon_nmatchedstations         );
-  tree->Branch("Muon_type"                      ,&Muon_type                     );
-  tree->Branch("Muon_nvalidstriphits"           ,&Muon_nvalidstriphits          );
-  tree->Branch("Muon_trkqoverp"                 ,&Muon_trkqoverp                );
-  tree->Branch("Muon_trklambda"                 ,&Muon_trklambda                );
-  tree->Branch("Muon_trkpt"                     ,&Muon_trkpt                    );
-  tree->Branch("Muon_trkphi"                    ,&Muon_trkphi                   );
-  tree->Branch("Muon_trketa"                    ,&Muon_trketa                   );
-  tree->Branch("Muon_trkqoverperror"            ,&Muon_trkqoverperror           );
-  tree->Branch("Muon_trklambdaerror"            ,&Muon_trklambdaerror           );
-  tree->Branch("Muon_trkpterror"                ,&Muon_trkpterror               );
-  tree->Branch("Muon_trkphierror"               ,&Muon_trkphierror              );
-  tree->Branch("Muon_trketaerror"               ,&Muon_trketaerror              );
-  tree->Branch("Muon_trkdszerror"               ,&Muon_trkdszerror              );
-  tree->Branch("Muon_trkdsz"                    ,&Muon_trkdsz                   );
+  tree->Branch("scalar_pt"                         ,&scalar_pt                 );
+  tree->Branch("scalar_eta"                         ,&scalar_eta                );
+  tree->Branch("scalar_phi"                         ,&scalar_phi                );
+  tree->Branch("scalar_m"                         ,&scalar_m               );
+  tree->Branch("gen_pt" , &truth_pts);
+  tree->Branch("gen_eta" , &truth_etas);
+  tree->Branch("gen_phi" , &truth_phis);
+  tree->Branch("gen_mass" , &truth_mass);
+  tree->Branch("gen_dR" , &truth_dR);
+  tree->Branch("gen_fromSuep" , &truth_fromSuep);
+  tree->Branch("gen_PV" , &truth_PV);
+  tree->Branch("gen_PVdZ" , &truth_PVdZ);
 
-  tree->Branch("ht"                             ,&ht                            );
-  tree->Branch("Muon_totPt"                     ,&Muon_totPt                    );
-  tree->Branch("Electron_totPt"                 ,&Electron_totPt                );
-  tree->Branch("PU_num"            	        ,&PU_num                        ,"PU_num/i");
-  tree->Branch("n_jet"            	        ,&n_jet                         ,"n_jet/i");
-  tree->Branch("n_jetId"            	        ,&n_jetId                       ,"n_jetId/i");
-  tree->Branch("Jet_pt"            	        ,&Jet_pt                        );
-  tree->Branch("Jet_eta"            	        ,&Jet_eta                       );
-  tree->Branch("Jet_phi"            	        ,&Jet_phi                       );
-  tree->Branch("Jet_m"            	        ,&Jet_m                         );
-  tree->Branch("Jet_area"            	        ,&Jet_area                      );
-  tree->Branch("Jet_chargedHadronEnergy"        ,&Jet_chargedHadronEnergy       );
-  tree->Branch("Jet_neutralHadronEnergy"        ,&Jet_neutralHadronEnergy       );
-  tree->Branch("Jet_photonEnergy"               ,&Jet_photonEnergy 	        );
-  tree->Branch("Jet_electronEnergy"             ,&Jet_electronEnergy            );
-  tree->Branch("Jet_muonEnergy"    	        ,&Jet_muonEnergy                );
-  tree->Branch("Jet_HFHadronEnergy"             ,&Jet_HFHadronEnergy            );
-  tree->Branch("Jet_HFEMEnergy"                 ,&Jet_HFEMEnergy                );
-  tree->Branch("Jet_HOEnergy"                   ,&Jet_HOEnergy                  );
-  tree->Branch("Jet_chargedHadronMultiplicity"  ,&Jet_chargedHadronMultiplicity );
-  tree->Branch("Jet_neutralHadronMultiplicity"  ,&Jet_neutralHadronMultiplicity );
-  tree->Branch("Jet_photonMultiplicity"         ,&Jet_photonMultiplicity        );
-  tree->Branch("Jet_electronMultiplicity"       ,&Jet_electronMultiplicity      );
-  tree->Branch("Jet_muonMultiplicity"           ,&Jet_muonMultiplicity          );
-  tree->Branch("Jet_HFHadronMultiplicity"       ,&Jet_HFHadronMultiplicity      );
-  tree->Branch("Jet_HFEMMultiplicity"           ,&Jet_HFEMMultiplicity          );
-  tree->Branch("Jet_csv"            	        ,&Jet_csv                       );
-  tree->Branch("Jet_mvaDiscriminator"           ,&Jet_mvaDiscriminator          );
-  tree->Branch("Jet_nConstituents"              ,&Jet_nConstituents             );
-  tree->Branch("Jet_passId"                     ,&Jet_passId                    );
+  tree->Branch("n_pvs"            	   ,&n_pvs 		,"n_pvs/i"		);	
+  tree->Branch("Vertex_x"        	   ,&Vertex_x  		    );
+  tree->Branch("Vertex_y"              ,&Vertex_y   	    );
+  tree->Branch("Vertex_z"              ,&Vertex_z  		    );
+  tree->Branch("Vertex_tracksSize"     ,&Vertex_tracksSize 	);
+  tree->Branch("Vertex_chi2"           ,&Vertex_chi2	    );
+  tree->Branch("Vertex_ndof"           ,&Vertex_ndof	    );
+  tree->Branch("Vertex_isValidVtx"     ,&Vertex_isValidVtx 	);
+
+  tree->Branch("n_mu"            	    , &n_mu 			, "n_mu/i"		);
+  tree->Branch("Muon_pt"                , &Muon_pt	);
+  tree->Branch("Muon_eta"               , &Muon_eta	);
+  tree->Branch("Muon_phi"               , &Muon_phi	);
+  tree->Branch("Muon_m"                 , &Muon_m	);
+  tree->Branch("Muon_ecaliso"           , &Muon_ecaliso	);
+  tree->Branch("Muon_hcaliso"           , &Muon_hcaliso	);
+  tree->Branch("Muon_trkiso"            , &Muon_trkiso	);
+  tree->Branch("Muon_chi2"              , &Muon_chi2	);
+  tree->Branch("Muon_ndof"              , &Muon_ndof	);
+  tree->Branch("Muon_charge"            , &Muon_charge	);
+  tree->Branch("Muon_dxy"               , &Muon_dxy	);
+  tree->Branch("Muon_dz"                , &Muon_dz	);
+  tree->Branch("Muon_nvalidmuon_hits"   , &Muon_nvalidmuon_hits	);
+  tree->Branch("Muon_validpixelhits"    , &Muon_nvalidpixelhits );
+  tree->Branch("Muon_nmatchedstations"  , &Muon_nmatchedstations);
+  tree->Branch("Muon_type"              , &Muon_type    );
+  tree->Branch("Muon_nvalidstriphits"   , &Muon_nvalidstriphits   );
+  tree->Branch("Muon_trkqoverp"         , &Muon_trkqoverp   );
+  tree->Branch("Muon_trklambda"         , &Muon_trklambda   );
+  tree->Branch("Muon_trkpt"             , &Muon_trkpt    );
+  tree->Branch("Muon_trkphi"            , &Muon_trkphi   );
+  tree->Branch("Muon_trketa"            , &Muon_trketa   );
+  tree->Branch("Muon_trkqoverperror"    , &Muon_trkqoverperror    );
+  tree->Branch("Muon_trklambdaerror"    , &Muon_trklambdaerror    );
+  tree->Branch("Muon_trkpterror"        , &Muon_trkpterror     );
+  tree->Branch("Muon_trkphierror"       , &Muon_trkphierror    );
+  tree->Branch("Muon_trketaerror"       , &Muon_trketaerror    );
+  tree->Branch("Muon_trkdszerror"       , &Muon_trkdszerror    );
+  tree->Branch("Muon_trkdsz"            , &Muon_trkdsz   );
+
+
+  tree->Branch("ht"                         ,&ht                 );
+  tree->Branch("Muon_totPt"                         ,&Muon_totPt                 );
+  tree->Branch("Electron_totPt"                         ,&Electron_totPt                 );
+  tree->Branch("PU_num"            	   	    ,&PU_num 			, "PU_num/i"	  );
+  tree->Branch("n_jet"            	   	    ,&n_jet 			, "n_jet/i"	  );
+  tree->Branch("n_jetId"            	   	,&n_jetId 			, "n_jetId/i" );
+  tree->Branch("Jet_pt"            	   	    ,&Jet_pt 				);
+  tree->Branch("Jet_eta"            	    ,&Jet_eta 			    );
+  tree->Branch("Jet_phi"            	    ,&Jet_phi 			    );
+  tree->Branch("Jet_m"            	   	    ,&Jet_m 				);
+  tree->Branch("Jet_area"            	    ,&Jet_area			    );
+  tree->Branch("Jet_chargedHadronEnergy"    ,&Jet_chargedHadronEnergy 	 );
+  tree->Branch("Jet_neutralHadronEnergy"    ,&Jet_neutralHadronEnergy 	 );
+  tree->Branch("Jet_photonEnergy"           ,&Jet_photonEnergy 		     );
+  tree->Branch("Jet_electronEnergy"         ,&Jet_electronEnergy 		 );
+  tree->Branch("Jet_muonEnergy"    		    ,&Jet_muonEnergy 		     );
+  tree->Branch("Jet_HFHadronEnergy"         ,&Jet_HFHadronEnergy 		 );
+  tree->Branch("Jet_HFEMEnergy"            	,&Jet_HFEMEnergy 		     );
+  tree->Branch("Jet_HOEnergy"            	,&Jet_HOEnergy 		         );
+  tree->Branch("Jet_chargedHadronMultiplicity"      ,&Jet_chargedHadronMultiplicity 		 );
+  tree->Branch("Jet_neutralHadronMultiplicity"      ,&Jet_neutralHadronMultiplicity 		 );
+  tree->Branch("Jet_photonMultiplicity"            	,&Jet_photonMultiplicity 		 );
+  tree->Branch("Jet_electronMultiplicity"           ,&Jet_electronMultiplicity 		 );
+  tree->Branch("Jet_muonMultiplicity"            	,&Jet_muonMultiplicity 		     );
+  tree->Branch("Jet_HFHadronMultiplicity"           ,&Jet_HFHadronMultiplicity 		 );
+  tree->Branch("Jet_HFEMMultiplicity"            	,&Jet_HFEMMultiplicity 		     );
+  tree->Branch("Jet_csv"            	   	,&Jet_csv 		 );
+  tree->Branch("Jet_mvaDiscriminator"       ,&Jet_mvaDiscriminator 		 );
+  tree->Branch("Jet_nConstituents"           ,&Jet_nConstituents 		 );
+  tree->Branch("Jet_passId"           ,&Jet_passId 		 );
+
   
   tree->Branch("n_fatjet"                       ,&n_fatjet                      ,"n_fatjet/i");
   tree->Branch("FatJet_area"                    ,&FatJet_area                   );
@@ -615,6 +668,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingPFJet> > pfjetsH;
   iEvent.getByToken(pfjetsToken, pfjetsH);
     
+  //Handle<vector<reco::Track> > tracksH;
+  //iEvent.getByToken(tracksToken, tracksH);
+
   Handle<vector<ScoutingParticle> > pfcandsH;
   iEvent.getByToken(pfcandsToken, pfcandsH);
 
@@ -779,6 +835,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // *
 
 
+
+
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
       ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
@@ -792,6 +850,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
     std::sort(PFcands.begin(), PFcands.end(), custompT);
 
+    
 
     PFcand_pt.clear();
     PFcand_eta.clear();
@@ -823,6 +882,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     vector<float> dr_vector_row; //sets all dR values between pFcands and gen tracks
     if (pfcands_iter.pt() < 0.5) continue;
     if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+    if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
 
     PFcand_pt.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.pt())));
     PFcand_eta.push_back(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())));
@@ -835,6 +895,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
      Electron_totPt += pfcands_iter.pt(); 
      n_pfEl ++;
     }
+
     if(doSignal){
       Handle<vector<reco::GenParticle> > genP;
       iEvent.getByToken(gensToken, genP);
@@ -844,12 +905,12 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         
         auto dR = deltaR2(genp_iter->eta(),genp_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
 
-        if(pfcands_iter.vertex() ==0){ ///////////////////EXTRA SELECTION
+        //if(pfcands_iter.vertex() ==0){ ///////////////////EXTRA SELECTION
         dr_vector_row.push_back(dR);//fills are dR values for this pFcand and all gen
         if(dR < 0.3 && abs(genp_iter->eta()) < 2.4){
         PFcand_alldR.push_back(dR);
         }
-        }
+        //}
         
       }
       dr_vector.push_back(dr_vector_row);// makes matrix of all pFcand-gen dR values
@@ -915,7 +976,7 @@ if(doSignal){  //do not run for data
       reco::GenParticle* mother = (reco::GenParticle*)genp_iter->mother();
       while(mother->numberOfMothers()>0 && abs(mother->pdgId())!=25){
         mother = (reco::GenParticle*)mother->mother();
-        if (abs(mother->pdgId())==25){
+        if (abs(mother->pdgId())==25){// && (mother->status() ==62){
       scalar_pt  = mother->pt();
       scalar_eta = mother->eta();
       scalar_phi = mother->phi();
@@ -1016,6 +1077,242 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   }
 
 }
+//if(runOffline){
+//    offlineTrack_pt.clear();
+//    offlineTrack_eta.clear();
+//    offlineTrack_phi.clear();
+//    offlineTrack_dR.clear();
+//    offlineTrack_dz.clear();
+//    offlineTrack_paired.clear();
+//    offlineTrack_PFcandpt.clear();
+//    offlineTrack_PFcandeta.clear();
+//    offlineTrack_PFcandphi.clear();
+//    onlineTrack_dR.clear();
+//    onlineTrack_offlinept.clear();
+//    onlineTrack_offlineeta.clear();
+//    onlineTrack_offlinephi.clear();
+//    offlinematched_count =0;
+//    offline_count =0;
+//    offline_frac =0;
+//    offlinematched_countHi =0;
+//    offline_countHi =0;
+//    offline_fracHi =0;
+//    offlinematched_countLo =0;
+//    offline_countLo =0;
+//    offline_fracLo =0;
+//    vector<vector<float>> offline_dr;
+//    for (auto tracks_iter = tracksH->begin(); tracks_iter != tracksH->end(); ++tracks_iter) {
+//      if (tracks_iter->pt() < 0.5) continue;
+//      if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+//      if (abs(tracks_iter->charge()) != 1 ) continue;
+//    
+//
+//      offlineTrack_pt.push_back(tracks_iter->pt()); 
+//      offlineTrack_eta.push_back(tracks_iter->eta()); 
+//      offlineTrack_phi.push_back(tracks_iter->phi()); 
+//      offlineTrack_dz.push_back(tracks_iter->dz()); 
+//      float mindR = 9999;
+//      bool isMatched = false;
+//      float matched_pt =0;
+//      float matched_eta =0;
+//      float matched_phi =0;
+//      vector<float> offline_dr_row;
+//      for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
+//        if (pfcands_iter.pt() < 0.5) continue;
+//        if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+//        if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
+//        auto dR = deltaR2(tracks_iter->eta(),tracks_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+//        offline_dr_row.push_back(dR);
+//      //  if (dR < mindR){
+//      //    mindR = dR;
+//      //    matched_pt = pfcands_iter.pt();
+//      //    matched_eta = pfcands_iter.eta();
+//      //    matched_phi = pfcands_iter.phi();
+//      //  }
+//      }
+//      offline_dr.push_back(offline_dr_row);
+//      //offlineTrack_dR.push_back(mindR);
+//      //if(mindR < 0.02){
+//      //  isMatched = true;
+//      //  offlinematched_count++;
+//      //  if(tracks_iter->pt()>20){
+//      //    offlinematched_countHi++;
+//      //  }else{
+//      //    offlinematched_countLo++;
+//      //  }
+//
+//      //}
+//      //offlineTrack_paired.push_back(isMatched);
+//      //offlineTrack_PFcandpt.push_back(matched_pt);
+//      //offlineTrack_PFcandeta.push_back(matched_eta);
+//      //offlineTrack_PFcandphi.push_back(matched_phi);
+//      offline_count++;
+//      if(tracks_iter->pt()>20){
+//        offline_countHi++;
+//      }else{
+//        offline_countLo++;
+//      }
+//      ////printf("track_pt %f\n",track_pt);
+//    }
+//    //offline_frac = offlinematched_count/offline_count;
+//    //offline_fracHi = offlinematched_countHi/offline_countHi;
+//    //offline_fracLo = offlinematched_countLo/offline_countLo;
+//
+////if(doSignal){  //do not run for other samples to save time
+//  // 1 to 1 gen matching
+//  std::vector<int> used_offline;
+//  std::vector<int> used_online;
+//  std::vector<float> odr_matched;
+//  //std::vector<float> gen_fromsuep;
+//  //std::vector<int> gen_pv;
+//  float min;
+//  do{
+//    min = std::numeric_limits<float>::max();
+//    int row =0;
+//    int minrow=-1;
+//    int mincol=-1;
+//    for( auto & v : offline_dr){ //loops over dR values for each PFcand
+//      if(std::find(used_offline.begin(), used_offline.end(), row) != used_offline.end()){row++; continue;}// skip if this row is already a matched pf Candidates and increase the row counter
+//      int col=0;
+//      for( auto & e : v){ // loops over dR values for each gen associated with this PFCand
+//        if(std::find(used_online.begin(), used_online.end(), col) != used_online.end()){col++; continue;}// skip if this col is already a matched gen and increase the col counter
+//        if(e <= min){ //finds min dR value within matrix. sets the used col and row position for the minimum as well as the new min dR value.
+//           mincol = col;
+//           minrow = row;
+//           min = e;
+//        }
+//        col++; // gen counter position increment
+//      }
+//      row++; // pfcand counter positsion increment
+//    }// all dR values have been looped over and the min dR has been found with position in gen and pfcand
+//    if(minrow != -1 && mincol != -1){ // if there is a dR match
+//        used_offline.push_back(minrow);// index of Pf cand with match
+//        used_online.push_back(mincol);// index of gen cand with match
+//        odr_matched.push_back(min);// dR between pF cand and gen
+//        //gen_fromsuep.push_back(truth_fromSuep.at(mincol));
+//        //gen_pv.push_back(PFcand_vertex.at(minrow));
+//    }
+//  }while(min < 0.3); //cut off value for min dR
+//
+//for(int e = 0; e < static_cast<int>(offlineTrack_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
+//    auto it = find(used_offline.begin(), used_offline.end(), e); // see if PF cand has a match
+//    if(it != used_offline.end()){
+//      float dR = odr_matched.at(it-used_offline.begin());// get dR associated with this PF cand
+//      int mincol = used_online.at(it-used_offline.begin());// get dR associated with this PF cand
+//      
+//      if (e==1){printf("mincol %d\n",mincol);}
+//      //float genFromSuep = gen_fromsuep.at(it-used_pf.begin());// get dR associated with this PF cand
+//      offlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
+//      if(dR < 0.02){
+//      offlinematched_count++;
+//      if(offlineTrack_pt.at(e)>20){
+//        offlinematched_countHi++;
+//      }else{
+//        offlinematched_countLo++;
+//      }}
+//     
+//      if (mincol < 0){
+//      offlineTrack_PFcandpt.push_back( -1);
+//      offlineTrack_PFcandeta.push_back(999);
+//      offlineTrack_PFcandphi.push_back(999);
+//      }else{
+//      //mincol = static_cast<int>(PFcand_pt.size())-mincol;
+//      offlineTrack_PFcandpt.push_back( PFcand_pt.at( mincol));
+//      offlineTrack_PFcandeta.push_back(PFcand_eta.at(mincol));
+//      offlineTrack_PFcandphi.push_back(PFcand_phi.at(mincol));
+//      }
+//      //PFcand_fromsuep.push_back(genFromSuep);
+//      //if(dR < 0.05){
+//      //  PFcand_fromsuep.push_back(1);
+//      //}
+//      //else{
+//      //  PFcand_fromsuep.push_back(0);
+//      //}
+//    }
+//    else{ 
+//      offlineTrack_dR.push_back(0.3);//no match found set as fake value
+//      offlineTrack_PFcandpt.push_back( -1);
+//      offlineTrack_PFcandeta.push_back(999);
+//      offlineTrack_PFcandphi.push_back(999);
+//      //PFcand_fromsuep.push_back(-1);
+//    }
+//  }
+//      //offline_count++;
+//      ////printf("track_pt %f\n",track_pt);
+//    //}
+//    offline_frac = offlinematched_count/offline_count;
+//    offline_fracHi = offlinematched_countHi/offline_countHi;
+//    offline_fracLo = offlinematched_countLo/offline_countLo;
+//for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
+//    auto it = find(used_online.begin(), used_online.end(), e); // see if PF cand has a match
+//    if(it != used_online.end()){
+//      float dR = odr_matched.at(it-used_online.begin());// get dR associated with this PF cand
+//      int minrow = used_offline.at(it-used_online.begin());// get dR associated with this PF cand
+//      
+//      if (e==24){printf("minrow %d\n",minrow);}
+//      //float genFromSuep = gen_fromsuep.at(it-used_pf.begin());// get dR associated with this PF cand
+//      onlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
+//      if (minrow < 0){
+//      onlineTrack_offlinept.push_back( -1);
+//      onlineTrack_offlineeta.push_back(999);
+//      onlineTrack_offlinephi.push_back(999);
+//      }else{
+//      //mincol = static_cast<int>(PFcand_pt.size())-mincol;
+//      onlineTrack_offlinept.push_back( offlineTrack_pt.at( minrow));
+//      onlineTrack_offlineeta.push_back(offlineTrack_eta.at(minrow));
+//      onlineTrack_offlinephi.push_back(offlineTrack_phi.at(minrow));
+//      }
+//      //PFcand_fromsuep.push_back(genFromSuep);
+//      //if(dR < 0.05){
+//      //  PFcand_fromsuep.push_back(1);
+//      //}
+//      //else{
+//      //  PFcand_fromsuep.push_back(0);
+//      //}
+//    }
+//    else{ 
+//      onlineTrack_dR.push_back(0.3);//no match found set as fake value
+//      onlineTrack_offlinept.push_back( -1);
+//      onlineTrack_offlineeta.push_back(999);
+//      onlineTrack_offlinephi.push_back(999);
+//      //PFcand_fromsuep.push_back(-1);
+//    }
+//  }
+////for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands again to set dR values in proper positions
+////    auto it = find(used_gen.begin(), used_gen.end(), e); // see if PF cand has a match
+////    if(it != used_gen.end()){
+////      float dR = dr_matched.at(it-used_gen.begin());// get dR associated with this PF cand
+////      //float dR = dr_matched.at(e);// get dR associated with this PF cand
+////      //printf("test4 %f\n",dR);
+////      truth_dR.push_back(dR); //push back dR at that match positon into proper position.
+////      int genPV = gen_pv.at(it-used_gen.begin());// get dR associated with this PF cand
+////      if(genPV ==0){
+////      truth_PV.push_back(0);
+////      truth_PVdZ.push_back(Vertex_z.at(0)-Vertex_z.at(genPV));
+////      }
+////      else if(genPV ==-1){
+////      truth_PV.push_back(2);
+////      truth_PVdZ.push_back(-1);
+////      }
+////      else{
+////      truth_PV.push_back(1);
+////      //truth_PVdZ.push_back(Vertex_z.at(0));//-Vertex_z.at(PFcand_vertex.at(it-used_gen.begin())));
+////      truth_PVdZ.push_back(Vertex_z.at(0)-Vertex_z.at(genPV));
+////      }
+////      //if(dR < 0.05){PFcand_fromsuep.push_back(1);}
+////      //else{PFcand_fromsuep.push_back(0);}
+////    }
+////    else{ 
+////      truth_dR.push_back(0.3);//no match found set as fake value
+////      truth_PV.push_back(3);
+////      truth_PVdZ.push_back(-1);
+////      //PFcand_fromsuep.push_back(0);
+////    }
+////  }
+//
+////}
+/////////////////////////////////////////
+//}
 ///////////////////////////////////////
 
   // 
