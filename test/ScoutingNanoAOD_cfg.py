@@ -100,21 +100,12 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not signal is run'
 )
-params.register(
-    'killtrk', 
-    False, 
-    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-    'Flag to indicate whether or not signal is run'
-)
 
 # Define the process
 process = cms.Process("LL")
 
 # Parse command line arguments
 params.parseArguments()
-
-print("Not here")
-print("era: %s Data:%s signal:%s"%(params.era, params.data, params.signal))
 
 # Message Logger settings
 process.load("FWCore.MessageService.MessageLogger_cfi")
@@ -211,30 +202,12 @@ L1Info = [
     'L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5',
     'L1_ETT2000']
 
-
-# Make tree
-if(params.era == "2016"):
-  vertexinfo         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-else:
-  vertexinfo = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx")
-if(params.signal):
-    pileupinfox       = cms.InputTag("slimmedAddPileupInfo")
-    gensx         = cms.InputTag("prunedGenParticles")
-    #pileupinfox       = cms.InputTag("addPileupInfo")
-    #gensx         = cms.InputTag("genParticles")
-else:
-    pileupinfox       = cms.InputTag("addPileupInfo")
-    gensx         = cms.InputTag("genParticles")
-
-
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
-	doL1 = cms.bool(False),
-	doData = cms.bool(params.data),
-	doSignal = cms.bool(params.signal),
-	runOffline = cms.bool(params.killtrk),
-    isMC = cms.bool(params.isMC),
-    stageL1Trigger   = cms.uint32(2),
-
+    doL1              = cms.bool(False),
+    doData            = cms.bool(not params.isMC),
+    doSignal          = cms.bool(params.signal),
+    isMC              = cms.bool(params.isMC),
+    stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
     bits              = cms.InputTag("TriggerResults", "", "HLT"),
@@ -253,23 +226,15 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
     l1Seeds           = cms.vstring(L1Info),
     hltSeeds          = cms.vstring(HLTInfo),
-
-	muons            = cms.InputTag("hltScoutingMuonPacker"),
-	electrons        = cms.InputTag("hltScoutingEgammaPacker"),
-    photons          = cms.InputTag("hltScoutingEgammaPacker"),
-	tracks          = cms.InputTag("generalTracks"),
-	pfcands          = cms.InputTag("hltScoutingPFPacker"),
-	pfjets           = cms.InputTag("hltScoutingPFPacker"),
-  
-    #vertices         = cms.InputTag("hltScoutingPFPacker","") ##Toggle this for 2016 instead of the next line,
-    vertices         = vertexinfo,
-    #vertices         = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
-    pileupinfo       = pileupinfox, #cms.InputTag("slimmedAddPileupInfo"),
-    #pileupinfo       = cms.InputTag("addPileupInfo"),
-    gens         = gensx, #cms.InputTag("prunedGenParticles"),
-    #gens         = cms.InputTag("genParticles"),
-	#vertices         = cms.InputTag("hltScoutingMuonPacker","displacedVtx"),
-
+    muons             = cms.InputTag("hltScoutingMuonPacker"),
+    electrons         = cms.InputTag("hltScoutingEgammaPacker"),
+    photons           = cms.InputTag("hltScoutingEgammaPacker"),
+    pfcands           = cms.InputTag("hltScoutingPFPacker"),
+    pfjets            = cms.InputTag("hltScoutingPFPacker"),
+    vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
+    vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    pileupinfo        = cms.InputTag("addPileupInfo"),
+    gens              = cms.InputTag("genParticles"),
     #geneventinfo     = cms.InputTag("generator"),
     rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
     rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
