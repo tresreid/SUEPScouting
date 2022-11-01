@@ -129,9 +129,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >          verticesToken2;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken;
-  const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken2;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
-  const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken2;
   //const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<double>  	rhoToken;
   const edm::EDGetTokenT<double>  	rhoToken2;
@@ -371,9 +369,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
   verticesToken2           (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices_2016"))),
   pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
-  pileupInfoToken2         (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo_sig"))),
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
-  gensToken2               (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens_sig"))),
   rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
   rhoToken2                (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho2"))),
   //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
@@ -632,13 +628,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   }
 
   Handle<vector<PileupSummaryInfo> > puInfo;
-
-  if(auto handle = iEvent.getHandle(pileupInfoToken2)){
-      iEvent.getByToken(pileupInfoToken2, puInfo);
-  }
-  else {
-      iEvent.getByToken(pileupInfoToken, puInfo);
-  }
+  iEvent.getByToken(pileupInfoToken, puInfo);
 
   run = iEvent.eventAuxiliary().run();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
@@ -847,7 +837,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     }
     if(doSignal){
       Handle<vector<reco::GenParticle> > genP;
-      iEvent.getByToken(gensToken2, genP);
+      iEvent.getByToken(gensToken, genP);
       for (auto genp_iter = genP->begin(); genp_iter != genP->end(); ++genp_iter ) {
         if (genp_iter->status()!=1){continue;}
         if (genp_iter->charge()==0){continue;}
@@ -894,7 +884,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 if(doSignal){  //do not run for data
   Handle<vector<reco::GenParticle> > genP;
-  iEvent.getByToken(gensToken2, genP);
+  iEvent.getByToken(gensToken, genP);
 
   truth_pts.clear();
   truth_etas.clear();
