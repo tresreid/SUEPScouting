@@ -130,11 +130,14 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >          verticesToken2;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken2;
+  const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken2;
-  //const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<double>  	rhoToken;
   const edm::EDGetTokenT<double>  	rhoToken2;
+  const edm::EDGetTokenT<double>  	prefireToken;
+  const edm::EDGetTokenT<double>  	prefireTokenup;
+  const edm::EDGetTokenT<double>  	prefireTokendown;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
@@ -170,6 +173,7 @@ private:
   std::vector<int>             l1Prescale_;
   std::vector<bool>            hltResult_;
   std::vector<std::string>     hltResultName_;
+  vector<double>            PSweights;
 
   //Photon
   UInt_t n_pho;
@@ -335,6 +339,9 @@ private:
 
   float                        rho;
   float                        rho2;
+  float                        prefire;
+  float                        prefireup;
+  float                        prefiredown;
 
   // Event shape variables
   float                        event_isotropy;
@@ -372,11 +379,14 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   verticesToken2           (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices_2016"))),
   pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
   pileupInfoToken2         (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo_sig"))),
+  genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   gensToken2               (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens_sig"))),
   rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
   rhoToken2                (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho2"))),
-  //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
+  prefireToken             (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProb"))),
+  prefireTokenup           (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbUp"))),
+  prefireTokendown         (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbDown"))),
   doL1                     (iConfig.existsAs<bool>("doL1")              ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
@@ -412,16 +422,20 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
   // Event weights
     
-  tree->Branch("lumSec"		                ,&lumSec                        ,"lumSec/i");
-  tree->Branch("run"		                ,&run                           ,"run/i");
+  tree->Branch("lumSec"		                  ,&lumSec            ,"lumSec/i");
+  tree->Branch("run"		                    ,&run                  ,"run/i");
+  tree->Branch("PSweights"            	    ,&PSweights 	                 );
+  tree->Branch("prefire"		                ,&prefire                      );
+  tree->Branch("prefireup"		              ,&prefireup                    );
+  tree->Branch("prefiredown"		            ,&prefiredown                  );
     
   // Triggers
   tree->Branch("hltResult"                      ,&hltResult_                    );              
   tree->Branch("hltResultName"                  ,&hltResultName_                );              
-  tree->Branch("l1Result"		        ,&l1Result_	                );		
-  tree->Branch("l1Prescale"		        ,&l1Prescale_                   );		
+  tree->Branch("l1Result"		                    ,&l1Result_	                );		
+  tree->Branch("l1Prescale"		                  ,&l1Prescale_                   );		
   //Electrons
-  tree->Branch("n_ele"            	         ,&n_ele                        ,"n_ele/i");
+  tree->Branch("n_ele"               	         ,&n_ele                        ,"n_ele/i");
   tree->Branch("Electron_pt"                    ,&Electron_pt                   );
   tree->Branch("Electron_eta"                   ,&Electron_eta 	                );
   tree->Branch("Electron_phi"                   ,&Electron_phi                  );
@@ -639,6 +653,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   else {
       iEvent.getByToken(pileupInfoToken, puInfo);
   }
+  
+  Handle<GenEventInfoProduct > genEvtInfo;
+  iEvent.getByToken(genEvtInfoToken, genEvtInfo);
 
   run = iEvent.eventAuxiliary().run();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
@@ -661,7 +678,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
           hltResultName_.push_back(hltbitName);
-          ///std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
           //HLT Trigger DST_DoubleMu1_noVtx_CaloScouting_v2 0 0 DST_DoubleMu1_noVtx_CaloScouting_v*
           //HLT Trigger DST_DoubleMu3_noVtx_CaloScouting_Monitoring_v6 0 1 DST_DoubleMu3_noVtx_CaloScouting_v*
           //HLT Trigger DST_DoubleMu3_noVtx_CaloScouting_v6 0 1 DST_DoubleMu3_noVtx_CaloScouting_v*
@@ -778,7 +795,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       int pu_bunchcrossing = PVI->getBunchCrossing();
       if(pu_bunchcrossing ==0){
         PU_num = PVI->getTrueNumInteractions();
-      //printf("%d: %u \n",counter,PU_num);counter++;
       }
     }
   }
@@ -1285,6 +1301,19 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   Handle<double> rhoH2;
   iEvent.getByToken(rhoToken2, rhoH2);
   rho2 = *rhoH2;
+
+  if(doSignal){
+    PSweights = genEvtInfo->weights();
+    Handle<double> prefirewgt;
+    iEvent.getByToken(prefireToken, prefirewgt);
+    prefire = *prefirewgt;
+    Handle<double> prefirewgtup;
+    iEvent.getByToken(prefireTokenup, prefirewgtup);
+    prefireup = *prefirewgtup;
+    Handle<double> prefirewgtdown;
+    iEvent.getByToken(prefireTokendown, prefirewgtdown);
+    prefiredown = *prefirewgtdown;
+  }
 
  // done for all events, no need to reset?
  EventShapeVariables event_algo(event_tracks);

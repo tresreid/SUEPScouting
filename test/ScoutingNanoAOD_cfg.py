@@ -178,6 +178,7 @@ process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFas
     gridSpacing = cms.double(0.55),
 )
 
+
 HLTInfo = [
     "DST_DoubleMu1_noVtx_CaloScouting_v*",
     "DST_DoubleMu3_noVtx_CaloScouting_v*",
@@ -204,7 +205,7 @@ L1Info = [
 
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doL1              = cms.bool(False),
-    doData            = cms.bool(not params.isMC),
+    doData            = cms.bool(not params.isMC and not params.signal),
     doSignal          = cms.bool(params.signal),
     isMC              = cms.bool(params.isMC),
     stageL1Trigger    = cms.uint32(2),
@@ -235,9 +236,9 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
+    geneventinfo     = cms.InputTag("generator"),
     gens              = cms.InputTag("genParticles"),
     gens_sig          = cms.InputTag("prunedGenParticles"),
-    #geneventinfo     = cms.InputTag("generator"),
     rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
     rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
 
@@ -252,5 +253,18 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
 process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
-process.p = cms.Path(process.mmtree)
+if(params.signal):
+  from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
+  process.prefiringweight = l1PrefiringWeightProducer.clone(
+  TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
+  #TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), #this should be the slimmedJets collection with up to date JECs 
+  DataEraECAL = cms.string("2017BtoF"), #Use 2016BtoH for 2016
+  DataEraMuon = cms.string("20172018"), #Use 2016 for 2016
+  UseJetEMPt = cms.bool(False),
+  PrefiringRateSystematicUnctyECAL = cms.double(0.2),
+  PrefiringRateSystematicUnctyMuon = cms.double(0.2)
+  )
+  process.p = cms.Path(process.prefiringweight* process.mmtree)
+else:
+  process.p = cms.Path(process.mmtree)
 process.p.associate(process.myTask)
