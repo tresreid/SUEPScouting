@@ -171,12 +171,14 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
-    pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
-    electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
-    maxRapidity = cms.double(5.0),
-    gridSpacing = cms.double(0.55),
-)
+if(params.era != "2016"):
+  print("RUNNNING TEST")
+  process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
+      pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
+      electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
+      maxRapidity = cms.double(5.0),
+      gridSpacing = cms.double(0.55),
+  )
 
 
 HLTInfo = [
@@ -208,6 +210,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doData            = cms.bool(not params.isMC and not params.signal),
     doSignal          = cms.bool(params.signal),
     isMC              = cms.bool(params.isMC),
+    era_16            = cms.bool(params.era == "2016"),
     stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
@@ -251,7 +254,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 
 # add any intermediate modules to this task list
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
-process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
+if(params.era != "2016"):
+  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
 if(params.signal):
   from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
@@ -267,4 +271,5 @@ if(params.signal):
   process.p = cms.Path(process.prefiringweight* process.mmtree)
 else:
   process.p = cms.Path(process.mmtree)
-process.p.associate(process.myTask)
+if(params.era != "2016"):
+  process.p.associate(process.myTask)

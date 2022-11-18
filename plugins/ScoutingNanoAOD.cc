@@ -152,6 +152,7 @@ private:
   bool doData;       
   bool doSignal;       
   bool isMC;
+  bool era_16;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -391,6 +392,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   isMC                     (iConfig.existsAs<bool>("isMC")              ?    iConfig.getParameter<bool>  ("isMC")            : true),
+  era_16                   (iConfig.existsAs<bool>("era_16")              ?    iConfig.getParameter<bool>  ("era_16")            : true),
 
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
@@ -621,28 +623,54 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //edm::Handle<edm::TriggerResults> triggerResultsH;
   //iEvent.getByToken(triggerResultsToken, triggerResultsH);
     
+  //Handle<vector<ScoutingElectron> > electronsH;
+  //iEvent.getByToken(electronsToken, electronsH);
+
+  //Handle<vector<ScoutingMuon> > muonsH;
+  //iEvent.getByToken(muonsToken, muonsH);
+
+  //Handle<vector<ScoutingPhoton> > photonsH;
+  //iEvent.getByToken(photonsToken, photonsH);
+
+  //Handle<vector<ScoutingPFJet> > pfjetsH;
+  //iEvent.getByToken(pfjetsToken, pfjetsH);
+  //  
+  //Handle<vector<ScoutingParticle> > pfcandsH;
+  //iEvent.getByToken(pfcandsToken, pfcandsH);
+
+  //Handle<vector<ScoutingVertex> > verticesH;
+ 
+  //if(auto handle = iEvent.getHandle(verticesToken2)){
+  //    iEvent.getByToken(verticesToken2, verticesH);
+  //}
+  //else {
+  //    iEvent.getByToken(verticesToken, verticesH);
+  //}
   Handle<vector<ScoutingElectron> > electronsH;
+  Handle<vector<ScoutingMuon> > muonsH;
+  Handle<vector<ScoutingPhoton> > photonsH;
+  Handle<vector<ScoutingPFJet> > pfjetsH;
+  Handle<vector<ScoutingParticle> > pfcandsH;
+  Handle<vector<ScoutingVertex> > verticesH;
+  printf("ERA!!!! %d\n",era_16);
+  if(isMC and not era_16){
   iEvent.getByToken(electronsToken, electronsH);
 
-  Handle<vector<ScoutingMuon> > muonsH;
   iEvent.getByToken(muonsToken, muonsH);
 
-  Handle<vector<ScoutingPhoton> > photonsH;
   iEvent.getByToken(photonsToken, photonsH);
 
-  Handle<vector<ScoutingPFJet> > pfjetsH;
   iEvent.getByToken(pfjetsToken, pfjetsH);
     
-  Handle<vector<ScoutingParticle> > pfcandsH;
   iEvent.getByToken(pfcandsToken, pfcandsH);
 
-  Handle<vector<ScoutingVertex> > verticesH;
  
   if(auto handle = iEvent.getHandle(verticesToken2)){
       iEvent.getByToken(verticesToken2, verticesH);
   }
   else {
       iEvent.getByToken(verticesToken, verticesH);
+  }
   }
 
   Handle<vector<PileupSummaryInfo> > puInfo;
@@ -717,7 +745,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   vector<ScoutingParticle> PFcands;
   PFcands.clear();
-
+  if(isMC and not era_16){
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
       Electron_pt.push_back(electrons_iter->pt());
@@ -738,7 +766,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
       ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
       PFcands.push_back(tmp);
-    }
+    }}
 
   // *
   // Photons here
@@ -753,6 +781,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Photon_hcaliso.clear();
   n_pho = 0;
 
+  if(isMC and not era_16){
   for (auto photons_iter = photonsH->begin(); photons_iter != photonsH->end(); ++photons_iter) {
     Photon_pt.push_back(photons_iter->pt());
     Photon_eta.push_back(photons_iter->eta());
@@ -764,7 +793,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     Photon_hcaliso.push_back(photons_iter->hcalIso());
     
     n_pho++;
-  }
+  }}
 
   // *
   // Primary vertices
@@ -777,7 +806,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Vertex_chi2.clear();
   Vertex_ndof.clear();
   Vertex_isValidVtx.clear();
-    for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
+  if(isMC and not era_16){
+  for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
         Vertex_x.push_back( vertices_iter->x() );
         Vertex_y.push_back( vertices_iter->y() );
         Vertex_z.push_back( vertices_iter->z() );
@@ -787,6 +817,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         Vertex_isValidVtx.push_back( vertices_iter->isValidVtx() );
         n_pvs++;
     }
+  }
   //bool runSig = false;
   //bool notData = true;
   //int counter=0;
@@ -804,11 +835,13 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // Particle Flow candidates 
   // *
 
-
+  
+    if(isMC and not era_16){
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
       ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
       PFcands.push_back(tmp);
+    }
     }
 
     //sort PFcands according to pT
@@ -1076,7 +1109,9 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   Muon_trketaerror.clear();
   Muon_trkdszerror.clear();
   Muon_trkdsz.clear();
-  n_mu=0;
+  n_mu=0;  
+  
+  if(isMC and not era_16){
   for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
  	Muon_pt.push_back(muons_iter->pt()); 
    	Muon_eta.push_back(muons_iter->eta());
@@ -1108,8 +1143,8 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
     Muon_trkdszerror.push_back(muons_iter->trk_dsz());
     Muon_trkdsz.push_back(muons_iter->trk_dszError());
     n_mu++;
- }
-
+  }
+  }
   // * 
   // Jets 
   // * 
@@ -1141,7 +1176,9 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   n_jetId = 0;
   ht = 0;
   passJetId = false;
-   for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
+
+  if(isMC and not era_16){
+  for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
 
     Jet_pt .push_back( pfjet->pt() );
     Jet_eta.push_back( pfjet->eta());
@@ -1182,6 +1219,7 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
     ht += pfjet->pt() ; 
     n_jetId++ ; 
 
+  }
   }
   // loop through constituents & save
 
@@ -1296,11 +1334,13 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   }
 
   Handle<double> rhoH;
+  Handle<double> rhoH2;
+  if(isMC and not era_16){
   iEvent.getByToken(rhoToken, rhoH);
   rho = *rhoH;
-  Handle<double> rhoH2;
   iEvent.getByToken(rhoToken2, rhoH2);
   rho2 = *rhoH2;
+  }else{ rho=0;rho2=0;}
 
   if(doSignal){
     PSweights = genEvtInfo->weights();
