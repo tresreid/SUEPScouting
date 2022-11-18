@@ -237,6 +237,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     pfjets            = cms.InputTag("hltScoutingPFPacker"),
     vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    offlineTracks     = cms.InputTag("generalTracks"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
     geneventinfo     = cms.InputTag("generator"),
