@@ -101,6 +101,13 @@ params.register(
     'Flag to indicate whether or not signal is run'
 )
 
+params.register(
+    'monitor', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
+
 # Define the process
 process = cms.Process("LL")
 
@@ -210,6 +217,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doData            = cms.bool(not params.isMC and not params.signal),
     doSignal          = cms.bool(params.signal),
     isMC              = cms.bool(params.isMC),
+    monitor           = cms.bool(params.monitor),
     era_16            = cms.bool(params.era == "2016"),
     stageL1Trigger    = cms.uint32(2),
 
@@ -234,6 +242,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     electrons         = cms.InputTag("hltScoutingEgammaPacker"),
     photons           = cms.InputTag("hltScoutingEgammaPacker"),
     pfcands           = cms.InputTag("hltScoutingPFPacker"),
+    pfjetsoff         = cms.InputTag("ak4PFJets"),
     pfjets            = cms.InputTag("hltScoutingPFPacker"),
     vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),

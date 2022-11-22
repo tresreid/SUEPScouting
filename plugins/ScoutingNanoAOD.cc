@@ -23,6 +23,7 @@
 #include "DataFormats/Scouting/interface/ScoutingMuon.h"
 #include "DataFormats/Scouting/interface/ScoutingParticle.h"
 #include "DataFormats/Scouting/interface/ScoutingVertex.h"
+#include "DataFormats/JetReco/interface/PFJet.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
@@ -119,6 +120,7 @@ private:
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   int getCharge(int pdgId);
   bool jetID(const ScoutingPFJet &pfjet);
+  bool jetIDoff(const reco::PFJet &pfjet);
 
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
@@ -127,6 +129,7 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
+  const edm::EDGetTokenT<std::vector<reco::PFJet> >  		pfjetsoffToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >          verticesToken2;
   const edm::EDGetTokenT<std::vector<reco::Track >>  	offlineTracksToken;
@@ -154,6 +157,7 @@ private:
   bool doData;       
   bool doSignal;       
   bool isMC;
+  bool monitor;
   bool era_16;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
@@ -245,6 +249,7 @@ private:
   UInt_t                       n_jet;
   UInt_t                       n_jetId;
   float                        ht;
+  float                        htoff;
   float                        Muon_totPt;
   float                        Electron_totPt;
   bool                         passJetId;
@@ -273,13 +278,45 @@ private:
   vector<Float16_t>  	       Jet_nConstituents;
   vector<bool>                 Jet_passId;
 
+  vector<Float16_t> 	     OffJet_pt;
+  vector<Float16_t>        OffJet_eta;
+  vector<Float16_t>        OffJet_phi;
+  vector<Float16_t>	       OffJet_m;
+  vector<Float16_t>	       OffJet_area;
+  vector<Float16_t>	       OffJet_chargedHadronEnergy;
+  vector<Float16_t>        OffJet_neutralHadronEnergy;
+  vector<Float16_t>	       OffJet_photonEnergy;
+  vector<Float16_t>	       OffJet_electronEnergy;
+  vector<Float16_t>	       OffJet_muonEnergy;
+  vector<Float16_t>	       OffJet_HFHadronEnergy;
+  vector<Float16_t>	       OffJet_HFEMEnergy;
+  vector<Float16_t>	       OffJet_HOEnergy;
+  vector<Float16_t>	       OffJet_chargedHadronMultiplicity;
+  vector<Float16_t>        OffJet_neutralHadronMultiplicity;
+  vector<Float16_t>	       OffJet_photonMultiplicity;
+  vector<Float16_t>	       OffJet_electronMultiplicity;
+  vector<Float16_t>	       OffJet_muonMultiplicity;
+  vector<Float16_t>	       OffJet_HFHadronMultiplicity;
+  vector<Float16_t>	       OffJet_HFEMMultiplicity;
+  vector<Float16_t> 	     OffJet_csv;
+  vector<Float16_t> 	     OffJet_mvaDiscriminator;
+  vector<Float16_t>  	     OffJet_nConstituents;
+  vector<bool>             OffJet_passId;
+  
   vector<Float16_t> offlineTrack_pt;
+  vector<Float16_t> offlineTrack_m;
+  vector<Float16_t> offlineTrack_dxy;
+  vector<Float16_t> offlineTrack_dzError;
+  vector<Float16_t> offlineTrack_ptError;
+  vector<Float16_t> offlineTrack_quality;
+  vector<Float16_t> offlineTrack_chi2;
   vector<Float16_t> offlineTrack_eta;
   vector<Float16_t> offlineTrack_phi;
   vector<Float16_t> offlineTrack_dR;
   vector<Float16_t> offlineTrack_dz;
   vector<bool> offlineTrack_paired;
   vector<bool> onlineTrack_paired;
+  vector<Float16_t> offlineTrack_PFcandpv;
   vector<Float16_t> offlineTrack_PFcandpt;
   vector<Float16_t> offlineTrack_PFcanddz;
   vector<Float16_t> offlineTrack_PFcandeta;
@@ -404,6 +441,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
+  pfjetsoffToken           (consumes<std::vector<reco::PFJet> >             (iConfig.getParameter<edm::InputTag>("pfjetsoff"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
   verticesToken2           (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices_2016"))),
   offlineTracksToken       (consumes<std::vector<reco::Track>>               (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
@@ -421,7 +459,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   isMC                     (iConfig.existsAs<bool>("isMC")              ?    iConfig.getParameter<bool>  ("isMC")            : true),
-  era_16                   (iConfig.existsAs<bool>("era_16")              ?    iConfig.getParameter<bool>  ("era_16")            : true),
+  monitor                  (iConfig.existsAs<bool>("monitor")           ?    iConfig.getParameter<bool>  ("monitor")           : false),
+  era_16                   (iConfig.existsAs<bool>("era_16")            ?    iConfig.getParameter<bool>  ("era_16")            : true),
 
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
@@ -501,13 +540,20 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("offline_countLo"                 ,&offline_countLo     );
   tree->Branch("offlinematched_countLo"                ,&offlinematched_countLo    );
   tree->Branch("offlineTrack_pt"                 ,&offlineTrack_pt     );
+  tree->Branch("offlineTrack_m"                 ,&offlineTrack_m     );
+  tree->Branch("offlineTrack_dxy"                 ,&offlineTrack_dxy     );
   tree->Branch("offlineTrack_eta"                ,&offlineTrack_eta    );
+  tree->Branch("offlineTrack_dzError"                ,&offlineTrack_dzError    );
+  tree->Branch("offlineTrack_ptError"                ,&offlineTrack_ptError    );
+  tree->Branch("offlineTrack_quality"                ,&offlineTrack_quality    );
+  tree->Branch("offlineTrack_chi2"                ,&offlineTrack_chi2    );
   tree->Branch("offlineTrack_phi"                ,&offlineTrack_phi    );
   tree->Branch("offlineTrack_dR"                 ,&offlineTrack_dR     );
   tree->Branch("offlineTrack_dz"                 ,&offlineTrack_dz     );
   tree->Branch("offlineTrack_paired"                 ,&offlineTrack_paired     );
   tree->Branch("onlineTrack_paired"                ,&onlineTrack_paired    );
   tree->Branch("offlineTrack_PFcandpt"                 ,&offlineTrack_PFcandpt     );
+  tree->Branch("offlineTrack_PFcandpv"                 ,&offlineTrack_PFcandpv     );
   tree->Branch("offlineTrack_PFcanddz"                 ,&offlineTrack_PFcanddz     );
   tree->Branch("offlineTrack_PFcandeta"                ,&offlineTrack_PFcandeta    );
   tree->Branch("offlineTrack_PFcandphi"                ,&offlineTrack_PFcandphi    );
@@ -593,6 +639,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Muon_trkdsz"                    ,&Muon_trkdsz                   );
 
   tree->Branch("ht"                             ,&ht                            );
+  tree->Branch("htoff"                             ,&htoff                            );
   tree->Branch("Muon_totPt"                     ,&Muon_totPt                    );
   tree->Branch("Electron_totPt"                 ,&Electron_totPt                );
   tree->Branch("PU_num"            	        ,&PU_num                        ,"PU_num/i");
@@ -622,6 +669,31 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_mvaDiscriminator"           ,&Jet_mvaDiscriminator          );
   tree->Branch("Jet_nConstituents"              ,&Jet_nConstituents             );
   tree->Branch("Jet_passId"                     ,&Jet_passId                    );
+  
+  tree->Branch("OffJet_pt"            	           ,&OffJet_pt                        );
+  tree->Branch("OffJet_eta"            	           ,&OffJet_eta                       );
+  tree->Branch("OffJet_phi"            	           ,&OffJet_phi                       );
+  tree->Branch("OffJet_m"            	             ,&OffJet_m                         );
+  tree->Branch("OffJet_area"            	         ,&OffJet_area                      );
+  tree->Branch("OffJet_chargedHadronEnergy"        ,&OffJet_chargedHadronEnergy       );
+  tree->Branch("OffJet_neutralHadronEnergy"        ,&OffJet_neutralHadronEnergy       );
+  tree->Branch("OffJet_photonEnergy"               ,&OffJet_photonEnergy 	        );
+  tree->Branch("OffJet_electronEnergy"             ,&OffJet_electronEnergy            );
+  tree->Branch("OffJet_muonEnergy"    	           ,&OffJet_muonEnergy                );
+  tree->Branch("OffJet_HFHadronEnergy"             ,&OffJet_HFHadronEnergy            );
+  tree->Branch("OffJet_HFEMEnergy"                 ,&OffJet_HFEMEnergy                );
+  tree->Branch("OffJet_HOEnergy"                   ,&OffJet_HOEnergy                  );
+  tree->Branch("OffJet_chargedHadronMultiplicity"  ,&OffJet_chargedHadronMultiplicity );
+  tree->Branch("OffJet_neutralHadronMultiplicity"  ,&OffJet_neutralHadronMultiplicity );
+  tree->Branch("OffJet_photonMultiplicity"         ,&OffJet_photonMultiplicity        );
+  tree->Branch("OffJet_electronMultiplicity"       ,&OffJet_electronMultiplicity      );
+  tree->Branch("OffJet_muonMultiplicity"           ,&OffJet_muonMultiplicity          );
+  tree->Branch("OffJet_HFHadronMultiplicity"       ,&OffJet_HFHadronMultiplicity      );
+  tree->Branch("OffJet_HFEMMultiplicity"           ,&OffJet_HFEMMultiplicity          );
+  tree->Branch("OffJet_csv"            	           ,&OffJet_csv                       );
+  tree->Branch("OffJet_mvaDiscriminator"           ,&OffJet_mvaDiscriminator          );
+  tree->Branch("OffJet_nConstituents"              ,&OffJet_nConstituents             );
+  tree->Branch("OffJet_passId"                     ,&OffJet_passId                    );
   
   tree->Branch("n_fatjet"                       ,&n_fatjet                      ,"n_fatjet/i");
   tree->Branch("FatJet_area"                    ,&FatJet_area                   );
@@ -701,6 +773,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //else {
   //    iEvent.getByToken(verticesToken, verticesH);
   //}
+  Handle<vector<reco::PFJet> > pfjetsoffH;
+  iEvent.getByToken(pfjetsoffToken, pfjetsoffH);
+
   Handle<vector<ScoutingElectron> > electronsH;
   Handle<vector<ScoutingMuon> > muonsH;
   Handle<vector<ScoutingPhoton> > photonsH;
@@ -728,7 +803,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         iEvent.getByToken(verticesToken, verticesH);
     }
   }
-  if(isMC){
+  if(isMC or monitor){
       iEvent.getByToken(offlineTracksToken, tracksH);
   }
 
@@ -1137,16 +1212,23 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
 
 
 
-if(isMC){
+if(isMC or monitor){
 //if(runOffline){
     offlineTrack_pt.clear();
+    offlineTrack_dxy.clear();
+    offlineTrack_dzError.clear();
+    offlineTrack_ptError.clear();
+    offlineTrack_quality.clear();
+    offlineTrack_chi2.clear();
     offlineTrack_eta.clear();
+    offlineTrack_m.clear();
     offlineTrack_phi.clear();
     offlineTrack_dz.clear();
     offlineTrack_dR.clear();
     offlineTrack_paired.clear();
     offlineTrack_PFcandpt.clear();
     offlineTrack_PFcanddz.clear();
+    offlineTrack_PFcandpv.clear();
     offlineTrack_PFcandeta.clear();
     offlineTrack_PFcandphi.clear();
     offlineTrack_PFcandq.clear();
@@ -1172,9 +1254,15 @@ if(isMC){
 
 
       offlineTrack_pt.push_back(tracks_iter->pt());
+      offlineTrack_dxy.push_back(tracks_iter->dxy());
       offlineTrack_eta.push_back(tracks_iter->eta());
+      offlineTrack_m.push_back(0.1395699);
       offlineTrack_phi.push_back(tracks_iter->phi());
       offlineTrack_dz.push_back(tracks_iter->dz());
+      offlineTrack_dzError.push_back(tracks_iter->dzError());
+      offlineTrack_ptError.push_back(tracks_iter->ptError());
+      offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
+      offlineTrack_chi2.push_back(tracks_iter->chi2());
       float mindR = 9999;
       bool isMatched = false;
       float matched_pt =0;
@@ -1246,12 +1334,14 @@ for(int e = 0; e < static_cast<int>(offlineTrack_pt.size()); e++){//loop over pf
       offlineTrack_PFcandpt.push_back( -1);
       offlineTrack_PFcandeta.push_back(999);
       offlineTrack_PFcanddz.push_back(999);
+      offlineTrack_PFcandpv.push_back(999);
       offlineTrack_PFcandphi.push_back(999);
       offlineTrack_PFcandq.push_back(999);
       offlineTrack_paired.push_back(false);
       }else{
       offlineTrack_paired.push_back(true);
       offlineTrack_PFcandpt.push_back( PFcand_pt.at( mincol));
+      offlineTrack_PFcandpv.push_back( PFcand_vertex.at( mincol));
       offlineTrack_PFcandeta.push_back(PFcand_eta.at(mincol));
       offlineTrack_PFcandphi.push_back(PFcand_phi.at(mincol));
       offlineTrack_PFcandq.push_back(PFcand_q.at(mincol));
@@ -1263,6 +1353,7 @@ for(int e = 0; e < static_cast<int>(offlineTrack_pt.size()); e++){//loop over pf
       offlineTrack_PFcandpt.push_back( -1);
       offlineTrack_PFcandeta.push_back(999);
       offlineTrack_PFcandphi.push_back(999);
+      offlineTrack_PFcandpv.push_back(999);
       offlineTrack_PFcanddz.push_back(999);
       offlineTrack_PFcandq.push_back(999);
       offlineTrack_paired.push_back(false);
@@ -1413,6 +1504,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
   n_jet = 0;
   n_jetId = 0;
   ht = 0;
+  htoff = 0;
   passJetId = false;
 
   if(not (isMC and era_16)){
@@ -1453,11 +1545,53 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 
     // apply jet ID 
     if ( passJetId == false ) continue; 
-    if (pfjet->pt() < 40){continue;}//raise pt threshold for HT calculation 
+    if (pfjet->pt() < 30){continue;}//raise pt threshold for HT calculation 
     ht += pfjet->pt() ; 
     n_jetId++ ; 
 
   }
+  }
+  for (auto pfjet = pfjetsoffH->begin(); pfjet != pfjetsoffH->end(); ++pfjet) {
+
+    OffJet_pt .push_back( pfjet->pt() );
+    OffJet_eta.push_back( pfjet->eta());
+    OffJet_phi.push_back( pfjet->phi());
+    OffJet_m  .push_back( pfjet->mass()  );
+
+    OffJet_area.push_back( pfjet->jetArea());
+
+    OffJet_chargedHadronEnergy.push_back( pfjet->chargedHadronEnergy());
+    OffJet_neutralHadronEnergy.push_back( pfjet->neutralHadronEnergy());
+    OffJet_photonEnergy       .push_back( pfjet->photonEnergy()       );
+    OffJet_electronEnergy     .push_back( pfjet->electronEnergy()     );
+    OffJet_muonEnergy         .push_back( pfjet->muonEnergy()     );
+    OffJet_HFHadronEnergy     .push_back( pfjet->HFHadronEnergy() );
+    OffJet_HFEMEnergy         .push_back( pfjet->HFEMEnergy()     );
+    OffJet_HOEnergy           .push_back( pfjet->hoEnergy()       );
+    
+    OffJet_chargedHadronMultiplicity.push_back( pfjet->chargedHadronMultiplicity());
+    OffJet_neutralHadronMultiplicity.push_back( pfjet->neutralHadronMultiplicity());
+    OffJet_photonMultiplicity       .push_back( pfjet->photonMultiplicity()       );
+    OffJet_electronMultiplicity     .push_back( pfjet->electronMultiplicity()     );
+    OffJet_muonMultiplicity         .push_back( pfjet->muonMultiplicity()         );
+    OffJet_HFHadronMultiplicity     .push_back( pfjet->HFHadronMultiplicity()     );
+    OffJet_HFEMMultiplicity         .push_back( pfjet->HFEMMultiplicity()         );
+
+    //OffJet_csv             .push_back( pfjet->csv() );
+    //OffJet_mvaDiscriminator.push_back( pfjet->mvaDiscriminator()    );
+    //OffJet_nConstituents   .push_back( pfjet->constituents().size() );
+    
+    //n_jet++;
+
+    passJetId = jetIDoff(*pfjet);
+    OffJet_passId.push_back( passJetId );
+
+    //// apply jet ID 
+    if ( passJetId == false ) continue; 
+    if (pfjet->pt() < 30){continue;}//raise pt threshold for HT calculation 
+    htoff += pfjet->pt() ; 
+    //n_jetId++ ; 
+
   }
   // loop through constituents & save
 
@@ -1783,6 +1917,23 @@ int ScoutingNanoAOD::getCharge(int pdgId) {
   // 22 = photon 
   // 1 = HF hadron, where HF means forward calo
   // 2 = HF em particle, where HF means forward calo
+}
+bool ScoutingNanoAOD::jetIDoff(const reco::PFJet &pfjet){
+// https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
+    //moved HT cut
+    TLorentzVector jet; 
+    jet.SetPtEtaPhiM(pfjet.pt(), pfjet.eta(), pfjet.phi(), pfjet.mass() );
+    
+    float NHF  = pfjet.neutralHadronEnergy()/jet.E();
+    float NEMF = pfjet.photonEnergy()/jet.E();
+    float CHF  = pfjet.chargedHadronEnergy()/jet.E();
+    float MUF  = pfjet.muonEnergy()/jet.E();
+    float CEMF = pfjet.electronEnergy()/jet.E();
+    float NumConst = pfjet.chargedHadronMultiplicity()+pfjet.neutralHadronMultiplicity()+pfjet.photonMultiplicity() + pfjet.electronMultiplicity() + pfjet.muonMultiplicity() + pfjet.HFHadronMultiplicity() + pfjet.HFEMMultiplicity();
+    float CHM      = pfjet.chargedHadronMultiplicity() +pfjet.electronMultiplicity() + pfjet.muonMultiplicity(); 
+    bool passID = (abs(pfjet.eta())<=2.6 && CEMF<0.8 && CHM>0 && CHF>0 && NumConst>1 && NEMF<0.9 && MUF <0.8 && NHF < 0.9 );
+
+    return passID;
 }
 bool ScoutingNanoAOD::jetID(const ScoutingPFJet &pfjet){
 // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
