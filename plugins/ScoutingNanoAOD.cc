@@ -132,7 +132,8 @@ private:
   const edm::EDGetTokenT<std::vector<reco::PFJet> >  		pfjetsoffToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >          verticesToken2;
-  const edm::EDGetTokenT<std::vector<reco::Track >>  	offlineTracksToken;
+  const edm::EDGetTokenT<std::vector<reco::PFCandidate >>  	offlineTracksToken;
+  //const edm::EDGetTokenT<std::vector<reco::Track >>  	offlineTracksToken;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken2;
   const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
@@ -159,6 +160,8 @@ private:
   bool isMC;
   bool monitor;
   bool era_16;
+  bool runScouting;
+  bool runOffline;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -311,6 +314,7 @@ private:
   vector<Float16_t> offlineTrack_quality;
   vector<Float16_t> offlineTrack_chi2;
   vector<Float16_t> offlineTrack_eta;
+  vector<Int_t> offlineTrack_event;
   vector<Float16_t> offlineTrack_phi;
   vector<Float16_t> offlineTrack_dR;
   vector<Float16_t> offlineTrack_dz;
@@ -432,6 +436,7 @@ private:
   //Run and lumisection
   int run;
   int lumSec;
+  int event_;
 
 };
 
@@ -444,7 +449,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   pfjetsoffToken           (consumes<std::vector<reco::PFJet> >             (iConfig.getParameter<edm::InputTag>("pfjetsoff"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
   verticesToken2           (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices_2016"))),
-  offlineTracksToken       (consumes<std::vector<reco::Track>>               (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
+  offlineTracksToken       (consumes<std::vector<reco::PFCandidate>>               (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
+  //offlineTracksToken       (consumes<std::vector<reco::Track>>               (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
   pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
   pileupInfoToken2         (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo_sig"))),
   genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
@@ -460,7 +466,11 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   isMC                     (iConfig.existsAs<bool>("isMC")              ?    iConfig.getParameter<bool>  ("isMC")            : true),
   monitor                  (iConfig.existsAs<bool>("monitor")           ?    iConfig.getParameter<bool>  ("monitor")           : false),
-  era_16                   (iConfig.existsAs<bool>("era_16")            ?    iConfig.getParameter<bool>  ("era_16")            : true),
+  era_16                   (iConfig.existsAs<bool>("era_16")            ?    iConfig.getParameter<bool>  ("era_16")            : false),
+  runScouting              (iConfig.existsAs<bool>("runScouting")       ?    iConfig.getParameter<bool>  ("runScouting")       : true),
+  runOffline               (iConfig.existsAs<bool>("runOffline")        ?    iConfig.getParameter<bool>  ("runOffline")        : false),
+
+  //if(isMC &&
 
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
@@ -494,6 +504,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
     
   tree->Branch("lumSec"		                  ,&lumSec            ,"lumSec/i");
   tree->Branch("run"		                    ,&run                  ,"run/i");
+  tree->Branch("event"		                    ,&event_                  ,"event/i");
   tree->Branch("PSweights"            	    ,&PSweights 	                 );
   tree->Branch("prefire"		                ,&prefire                      );
   tree->Branch("prefireup"		              ,&prefireup                    );
@@ -543,6 +554,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("offlineTrack_m"                 ,&offlineTrack_m     );
   tree->Branch("offlineTrack_dxy"                 ,&offlineTrack_dxy     );
   tree->Branch("offlineTrack_eta"                ,&offlineTrack_eta    );
+  tree->Branch("offlineTrack_event"                ,&offlineTrack_event    );
   tree->Branch("offlineTrack_dzError"                ,&offlineTrack_dzError    );
   tree->Branch("offlineTrack_ptError"                ,&offlineTrack_ptError    );
   tree->Branch("offlineTrack_quality"                ,&offlineTrack_quality    );
@@ -774,7 +786,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //    iEvent.getByToken(verticesToken, verticesH);
   //}
   Handle<vector<reco::PFJet> > pfjetsoffH;
-  iEvent.getByToken(pfjetsoffToken, pfjetsoffH);
 
   Handle<vector<ScoutingElectron> > electronsH;
   Handle<vector<ScoutingMuon> > muonsH;
@@ -782,9 +793,14 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<ScoutingPFJet> > pfjetsH;
   Handle<vector<ScoutingParticle> > pfcandsH;
   Handle<vector<ScoutingVertex> > verticesH;
-  Handle<vector<reco::Track> > tracksH;
+  Handle<vector<reco::PFCandidate> > tracksH;
+  //Handle<vector<reco::Track> > tracksH;
   printf("ERA!!!! %d\n",era_16);
-  if(not (isMC and era_16)){
+  if(isMC and era_16 and not doSignal){ runScouting = false;}
+  if(isMC){runOffline = true;}
+  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  if(runScouting){
+  //if(not (isMC and era_16)){
     iEvent.getByToken(electronsToken, electronsH);
 
     iEvent.getByToken(muonsToken, muonsH);
@@ -803,8 +819,10 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         iEvent.getByToken(verticesToken, verticesH);
     }
   }
-  if(isMC or monitor){
+  if(runOffline){
+  //if(isMC or monitor){
       iEvent.getByToken(offlineTracksToken, tracksH);
+      iEvent.getByToken(pfjetsoffToken, pfjetsoffH);
   }
 
   Handle<vector<PileupSummaryInfo> > puInfo;
@@ -819,6 +837,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByToken(genEvtInfoToken, genEvtInfo);
 
   run = iEvent.eventAuxiliary().run();
+  event_ = iEvent.eventAuxiliary().event();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
 
   // Which triggers fired
@@ -878,7 +897,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   vector<ScoutingParticle> PFcands;
   PFcands.clear();
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
       Electron_pt.push_back(electrons_iter->pt());
@@ -914,7 +934,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Photon_hcaliso.clear();
   n_pho = 0;
 
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto photons_iter = photonsH->begin(); photons_iter != photonsH->end(); ++photons_iter) {
     Photon_pt.push_back(photons_iter->pt());
     Photon_eta.push_back(photons_iter->eta());
@@ -939,7 +960,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Vertex_chi2.clear();
   Vertex_ndof.clear();
   Vertex_isValidVtx.clear();
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
         Vertex_x.push_back( vertices_iter->x() );
         Vertex_y.push_back( vertices_iter->y() );
@@ -969,7 +991,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // *
 
   
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
       ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
@@ -1212,7 +1235,8 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
 
 
 
-if(isMC or monitor){
+if(runScouting && runOffline){
+//if(isMC or monitor){
 //if(runOffline){
     offlineTrack_pt.clear();
     offlineTrack_dxy.clear();
@@ -1221,6 +1245,7 @@ if(isMC or monitor){
     offlineTrack_quality.clear();
     offlineTrack_chi2.clear();
     offlineTrack_eta.clear();
+    offlineTrack_event.clear();
     offlineTrack_m.clear();
     offlineTrack_phi.clear();
     offlineTrack_dz.clear();
@@ -1247,22 +1272,55 @@ if(isMC or monitor){
     offline_countLo =0;
     offline_fracLo =0;
     vector<vector<float>> offline_dr;
+    float pvsum[60] = {0};
+    float pvmax = 0;
+    int pvindex = -1;
     for (auto tracks_iter = tracksH->begin(); tracks_iter != tracksH->end(); ++tracks_iter) {
       if (tracks_iter->pt() < 0.5) continue;
       if (abs(tracks_iter->eta()) >= 2.4 ) continue;
       if (abs(tracks_iter->charge()) != 1 ) continue;
 
+      int pvbin = static_cast<int>(tracks_iter->vz());
+      if(pvbin > 30) { pvbin = 30;}
+      if(pvbin < -30) { pvbin = -30;}
+      pvbin = pvbin + 30;
+      pvsum[pvbin] += tracks_iter->pt();
+    }
+    for(int i=0; i < 60; i++){
+        if( pvmax < pvsum[i]){
+          pvmax = pvsum[i];
+          pvindex = i;
+        }
+    }
+    for (auto tracks_iter = tracksH->begin(); tracks_iter != tracksH->end(); ++tracks_iter) {
+      if (tracks_iter->pt() < 0.5) continue;
+      if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+      if (abs(tracks_iter->charge()) != 1 ) continue;
 
+      int pvbin = static_cast<int>(tracks_iter->vz());
+      if(pvbin > 30) { pvbin = 30;}
+      if(pvbin < -30) { pvbin = -30;}
+      pvbin = pvbin + 30;
+      //pvsum[pvbin] += tracks_iter->pt();
+      if(pvbin == pvindex){
+      offlineTrack_quality.push_back(1);
+      }else{
+      offlineTrack_quality.push_back(0);
+      }
+    
+      
+
+      offlineTrack_event.push_back(event_);
       offlineTrack_pt.push_back(tracks_iter->pt());
-      offlineTrack_dxy.push_back(tracks_iter->dxy());
+      //offlineTrack_dxy.push_back(tracks_iter->dxy());
       offlineTrack_eta.push_back(tracks_iter->eta());
       offlineTrack_m.push_back(0.1395699);
       offlineTrack_phi.push_back(tracks_iter->phi());
-      offlineTrack_dz.push_back(tracks_iter->dz());
+      offlineTrack_dz.push_back(tracks_iter->vz());
       offlineTrack_dzError.push_back(tracks_iter->dzError());
-      offlineTrack_ptError.push_back(tracks_iter->ptError());
-      offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
-      offlineTrack_chi2.push_back(tracks_iter->chi2());
+      //offlineTrack_ptError.push_back(tracks_iter->ptError());
+      //offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
+      //offlineTrack_chi2.push_back(tracks_iter->chi2());
       float mindR = 9999;
       bool isMatched = false;
       float matched_pt =0;
@@ -1440,7 +1498,8 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
   Muon_trkdsz.clear();
   n_mu=0;  
   
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
  	Muon_pt.push_back(muons_iter->pt()); 
    	Muon_eta.push_back(muons_iter->eta());
@@ -1507,7 +1566,8 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
   htoff = 0;
   passJetId = false;
 
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
 
     Jet_pt .push_back( pfjet->pt() );
@@ -1551,6 +1611,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 
   }
   }
+  if(runOffline){
   for (auto pfjet = pfjetsoffH->begin(); pfjet != pfjetsoffH->end(); ++pfjet) {
 
     OffJet_pt .push_back( pfjet->pt() );
@@ -1592,6 +1653,7 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
     htoff += pfjet->pt() ; 
     //n_jetId++ ; 
 
+  }  
   }
   // loop through constituents & save
 
@@ -1707,7 +1769,8 @@ for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands
 
   Handle<double> rhoH;
   Handle<double> rhoH2;
-  if(not (isMC and era_16)){
+  if(runScouting){
+  //if(not (isMC and era_16)){
   iEvent.getByToken(rhoToken, rhoH);
   rho = *rhoH;
   iEvent.getByToken(rhoToken2, rhoH2);

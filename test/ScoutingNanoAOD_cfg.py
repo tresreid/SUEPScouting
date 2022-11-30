@@ -100,6 +100,18 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not signal is run'
 )
+params.register(
+    'runScouting', 
+    True, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
+params.register(
+    'runOffline', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
 
 params.register(
     'monitor', 
@@ -179,13 +191,13 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 
 # get rho producer
 if(params.era != "2016"):
-  print("RUNNNING TEST")
   process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
       pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
       electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
       maxRapidity = cms.double(5.0),
       gridSpacing = cms.double(0.55),
   )
+#print("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d")
 
 
 HLTInfo = [
@@ -219,6 +231,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     isMC              = cms.bool(params.isMC),
     monitor           = cms.bool(params.monitor),
     era_16            = cms.bool(params.era == "2016"),
+    runScouting          = cms.bool(params.runScouting),
+    runOffline          = cms.bool(params.runOffline),
     stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
@@ -246,7 +260,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     pfjets            = cms.InputTag("hltScoutingPFPacker"),
     vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
-    offlineTracks     = cms.InputTag("generalTracks"),
+    offlineTracks     = cms.InputTag("particleFlow"),
+    #offlineTracks     = cms.InputTag("generalTracks"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
     geneventinfo     = cms.InputTag("generator"),
