@@ -23,6 +23,7 @@
 #include "DataFormats/Scouting/interface/ScoutingMuon.h"
 #include "DataFormats/Scouting/interface/ScoutingParticle.h"
 #include "DataFormats/Scouting/interface/ScoutingVertex.h"
+#include "DataFormats/JetReco/interface/PFJet.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
@@ -62,6 +63,8 @@
 #include "HLTrigger/HLTcore/interface/TriggerExpressionParser.h"
 
 #include <DataFormats/TrackReco/interface/TrackBase.h>
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
 #include "DataFormats/Math/interface/libminifloat.h"
 
@@ -118,6 +121,7 @@ private:
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   int getCharge(int pdgId);
   bool jetID(const ScoutingPFJet &pfjet);
+  bool jetIDoff(const reco::PFJet &pfjet);
 
   const edm::InputTag triggerResultsTag;
   const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
@@ -126,15 +130,22 @@ private:
   const edm::EDGetTokenT<std::vector<ScoutingPhoton> >  	photonsToken;
   const edm::EDGetTokenT<std::vector<ScoutingParticle> >  	pfcandsToken;
   const edm::EDGetTokenT<std::vector<ScoutingPFJet> >  		pfjetsToken;
+  const edm::EDGetTokenT<std::vector<reco::PFJet> >  		pfjetsoffToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >  	verticesToken;
   const edm::EDGetTokenT<std::vector<ScoutingVertex> >          verticesToken2;
+  const edm::EDGetTokenT<std::vector<reco::PFCandidate >>  	offlineTracksToken;
+  const edm::EDGetTokenT<std::vector<pat::PackedCandidate >>  	offlineTracksToken2;
+  //const edm::EDGetTokenT<std::vector<reco::Track >>  	offlineTracksToken;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken;
   const edm::EDGetTokenT<std::vector<PileupSummaryInfo> >       pileupInfoToken2;
+  const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken2;
-  //const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<double>  	rhoToken;
   const edm::EDGetTokenT<double>  	rhoToken2;
+  const edm::EDGetTokenT<double>  	prefireToken;
+  const edm::EDGetTokenT<double>  	prefireTokenup;
+  const edm::EDGetTokenT<double>  	prefireTokendown;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
@@ -149,6 +160,10 @@ private:
   bool doData;       
   bool doSignal;       
   bool isMC;
+  bool monitor;
+  bool era_16;
+  bool runScouting;
+  bool runOffline;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -170,6 +185,7 @@ private:
   std::vector<int>             l1Prescale_;
   std::vector<bool>            hltResult_;
   std::vector<std::string>     hltResultName_;
+  vector<double>            PSweights;
 
   //Photon
   UInt_t n_pho;
@@ -238,6 +254,7 @@ private:
   UInt_t                       n_jet;
   UInt_t                       n_jetId;
   float                        ht;
+  float                        htoff;
   float                        Muon_totPt;
   float                        Electron_totPt;
   bool                         passJetId;
@@ -265,6 +282,65 @@ private:
   vector<Float16_t> 	       Jet_mvaDiscriminator;
   vector<Float16_t>  	       Jet_nConstituents;
   vector<bool>                 Jet_passId;
+
+  vector<Float16_t> 	     OffJet_pt;
+  vector<Float16_t>        OffJet_eta;
+  vector<Float16_t>        OffJet_phi;
+  vector<Float16_t>	       OffJet_m;
+  vector<Float16_t>	       OffJet_area;
+  vector<Float16_t>	       OffJet_chargedHadronEnergy;
+  vector<Float16_t>        OffJet_neutralHadronEnergy;
+  vector<Float16_t>	       OffJet_photonEnergy;
+  vector<Float16_t>	       OffJet_electronEnergy;
+  vector<Float16_t>	       OffJet_muonEnergy;
+  vector<Float16_t>	       OffJet_HFHadronEnergy;
+  vector<Float16_t>	       OffJet_HFEMEnergy;
+  vector<Float16_t>	       OffJet_HOEnergy;
+  vector<Float16_t>	       OffJet_chargedHadronMultiplicity;
+  vector<Float16_t>        OffJet_neutralHadronMultiplicity;
+  vector<Float16_t>	       OffJet_photonMultiplicity;
+  vector<Float16_t>	       OffJet_electronMultiplicity;
+  vector<Float16_t>	       OffJet_muonMultiplicity;
+  vector<Float16_t>	       OffJet_HFHadronMultiplicity;
+  vector<Float16_t>	       OffJet_HFEMMultiplicity;
+  vector<Float16_t> 	     OffJet_csv;
+  vector<Float16_t> 	     OffJet_mvaDiscriminator;
+  vector<Float16_t>  	     OffJet_nConstituents;
+  vector<bool>             OffJet_passId;
+  
+  vector<Float16_t> offlineTrack_pt;
+  vector<Float16_t> offlineTrack_m;
+  vector<Float16_t> offlineTrack_dxy;
+  vector<Float16_t> offlineTrack_dzError;
+  vector<Float16_t> offlineTrack_ptError;
+  vector<Float16_t> offlineTrack_quality;
+  vector<Float16_t> offlineTrack_chi2;
+  vector<Float16_t> offlineTrack_eta;
+  vector<Int_t> offlineTrack_event;
+  vector<Float16_t> offlineTrack_phi;
+  vector<Float16_t> offlineTrack_dR;
+  vector<Float16_t> offlineTrack_vz;
+  vector<bool> offlineTrack_paired;
+  vector<bool> onlineTrack_paired;
+  vector<Float16_t> offlineTrack_PFcandpv;
+  vector<Float16_t> offlineTrack_PFcandpt;
+  vector<Float16_t> offlineTrack_PFcanddz;
+  vector<Float16_t> offlineTrack_PFcandeta;
+  vector<Float16_t> offlineTrack_PFcandphi;
+  vector<Float16_t> offlineTrack_PFcandq;
+  vector<Float16_t> onlineTrack_dR;
+  vector<Float16_t> onlineTrack_offlinept;
+  vector<Float16_t> onlineTrack_offlineeta;
+  vector<Float16_t> onlineTrack_offlinephi;
+  float offline_count;
+  float offlinematched_count;
+  float offline_frac;
+  float offline_countHi;
+  float offlinematched_countHi;
+  float offline_fracHi;
+  float offline_countLo;
+  float offlinematched_countLo;
+  float offline_fracLo;
 
   //PFCand
   UInt_t                       n_pfcand;
@@ -335,6 +411,9 @@ private:
 
   float                        rho;
   float                        rho2;
+  float                        prefire;
+  float                        prefireup;
+  float                        prefiredown;
 
   // Event shape variables
   float                        event_isotropy;
@@ -359,6 +438,7 @@ private:
   //Run and lumisection
   int run;
   int lumSec;
+  int event_;
 
 };
 
@@ -368,19 +448,32 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   photonsToken             (consumes<std::vector<ScoutingPhoton> >           (iConfig.getParameter<edm::InputTag>("photons"))), 
   pfcandsToken             (consumes<std::vector<ScoutingParticle> >         (iConfig.getParameter<edm::InputTag>("pfcands"))), 
   pfjetsToken              (consumes<std::vector<ScoutingPFJet> >            (iConfig.getParameter<edm::InputTag>("pfjets"))), 
+  pfjetsoffToken           (consumes<std::vector<reco::PFJet> >              (iConfig.getParameter<edm::InputTag>("pfjetsoff"))), 
   verticesToken            (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices"))),
   verticesToken2           (consumes<std::vector<ScoutingVertex> >           (iConfig.getParameter<edm::InputTag>("vertices_2016"))),
+  offlineTracksToken       (consumes<std::vector<reco::PFCandidate>>         (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
+  offlineTracksToken2       (consumes<std::vector<pat::PackedCandidate>>  (iConfig.getParameter<edm::InputTag>("offlineTracks2"))), 
+  //offlineTracksToken       (consumes<std::vector<reco::Track>>              (iConfig.getParameter<edm::InputTag>("offlineTracks"))), 
   pileupInfoToken          (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo"))),
   pileupInfoToken2         (consumes<std::vector<PileupSummaryInfo> >        (iConfig.getParameter<edm::InputTag>("pileupinfo_sig"))),
+  genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   gensToken2               (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens_sig"))),
   rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
   rhoToken2                (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho2"))),
-  //genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
+  prefireToken             (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProb"))),
+  prefireTokenup           (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbUp"))),
+  prefireTokendown         (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbDown"))),
   doL1                     (iConfig.existsAs<bool>("doL1")              ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
   isMC                     (iConfig.existsAs<bool>("isMC")              ?    iConfig.getParameter<bool>  ("isMC")            : true),
+  monitor                  (iConfig.existsAs<bool>("monitor")           ?    iConfig.getParameter<bool>  ("monitor")           : false),
+  era_16                   (iConfig.existsAs<bool>("era_16")            ?    iConfig.getParameter<bool>  ("era_16")            : false),
+  runScouting              (iConfig.existsAs<bool>("runScouting")       ?    iConfig.getParameter<bool>  ("runScouting")       : true),
+  runOffline               (iConfig.existsAs<bool>("runOffline")        ?    iConfig.getParameter<bool>  ("runOffline")        : false),
+
+  //if(isMC &&
 
   hltPSProv_(iConfig,consumesCollector(),*this), //it needs a referernce to the calling module for some reason, hence the *this   
   hltProcess_(iConfig.getParameter<std::string>("hltProcess")),
@@ -412,16 +505,21 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
 
   // Event weights
     
-  tree->Branch("lumSec"		                ,&lumSec                        ,"lumSec/i");
-  tree->Branch("run"		                ,&run                           ,"run/i");
+  tree->Branch("lumSec"		                  ,&lumSec            ,"lumSec/i");
+  tree->Branch("run"		                    ,&run                  ,"run/i");
+  tree->Branch("event"		                    ,&event_                  ,"event/i");
+  tree->Branch("PSweights"            	    ,&PSweights 	                 );
+  tree->Branch("prefire"		                ,&prefire                      );
+  tree->Branch("prefireup"		              ,&prefireup                    );
+  tree->Branch("prefiredown"		            ,&prefiredown                  );
     
   // Triggers
   tree->Branch("hltResult"                      ,&hltResult_                    );              
   tree->Branch("hltResultName"                  ,&hltResultName_                );              
-  tree->Branch("l1Result"		        ,&l1Result_	                );		
-  tree->Branch("l1Prescale"		        ,&l1Prescale_                   );		
+  tree->Branch("l1Result"		                    ,&l1Result_	                );		
+  tree->Branch("l1Prescale"		                  ,&l1Prescale_                   );		
   //Electrons
-  tree->Branch("n_ele"            	         ,&n_ele                        ,"n_ele/i");
+  tree->Branch("n_ele"               	         ,&n_ele                        ,"n_ele/i");
   tree->Branch("Electron_pt"                    ,&Electron_pt                   );
   tree->Branch("Electron_eta"                   ,&Electron_eta 	                );
   tree->Branch("Electron_phi"                   ,&Electron_phi                  );
@@ -445,6 +543,40 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Photon_ecaliso"                 ,&Photon_ecaliso 		);
   tree->Branch("Photon_HoE"            	        ,&Photon_HoE                    );
   tree->Branch("Photon_sigmaietaieta"           ,&Photon_sigmaietaieta	        );
+
+  tree->Branch("offline_frac"                ,&offline_frac    );
+  tree->Branch("offline_count"                 ,&offline_count     );
+  tree->Branch("offlinematched_count"                ,&offlinematched_count    );
+  tree->Branch("offline_fracHi"                ,&offline_fracHi    );
+  tree->Branch("offline_countHi"                 ,&offline_countHi     );
+  tree->Branch("offlinematched_countHi"                ,&offlinematched_countHi    );
+  tree->Branch("offline_fracLo"                ,&offline_fracLo    );
+  tree->Branch("offline_countLo"                 ,&offline_countLo     );
+  tree->Branch("offlinematched_countLo"                ,&offlinematched_countLo    );
+  tree->Branch("offlineTrack_pt"                 ,&offlineTrack_pt     );
+  tree->Branch("offlineTrack_m"                 ,&offlineTrack_m     );
+  tree->Branch("offlineTrack_dxy"                 ,&offlineTrack_dxy     );
+  tree->Branch("offlineTrack_eta"                ,&offlineTrack_eta    );
+  tree->Branch("offlineTrack_event"                ,&offlineTrack_event    );
+  tree->Branch("offlineTrack_dzError"                ,&offlineTrack_dzError    );
+  tree->Branch("offlineTrack_ptError"                ,&offlineTrack_ptError    );
+  tree->Branch("offlineTrack_quality"                ,&offlineTrack_quality    );
+  tree->Branch("offlineTrack_chi2"                ,&offlineTrack_chi2    );
+  tree->Branch("offlineTrack_phi"                ,&offlineTrack_phi    );
+  tree->Branch("offlineTrack_dR"                 ,&offlineTrack_dR     );
+  tree->Branch("offlineTrack_vz"                 ,&offlineTrack_vz     );
+  tree->Branch("offlineTrack_paired"                 ,&offlineTrack_paired     );
+  tree->Branch("onlineTrack_paired"                ,&onlineTrack_paired    );
+  tree->Branch("offlineTrack_PFcandpt"                 ,&offlineTrack_PFcandpt     );
+  tree->Branch("offlineTrack_PFcandpv"                 ,&offlineTrack_PFcandpv     );
+  tree->Branch("offlineTrack_PFcanddz"                 ,&offlineTrack_PFcanddz     );
+  tree->Branch("offlineTrack_PFcandeta"                ,&offlineTrack_PFcandeta    );
+  tree->Branch("offlineTrack_PFcandphi"                ,&offlineTrack_PFcandphi    );
+  tree->Branch("offlineTrack_PFcandq"                ,&offlineTrack_PFcandq    );
+  tree->Branch("onlineTrack_dR"                ,&onlineTrack_dR    );
+  tree->Branch("onlineTrack_offlinept"                 ,&onlineTrack_offlinept     );
+  tree->Branch("onlineTrack_offlineeta"                ,&onlineTrack_offlineeta    );
+  tree->Branch("onlineTrack_offlinephi"                ,&onlineTrack_offlinephi    );
 
   tree->Branch("n_pfcand"            	        ,&n_pfcand 		        ,"n_pfcand/i");	
   tree->Branch("n_pfMu"            	        ,&n_pfMu 		        ,"n_pfMu/i");	
@@ -522,6 +654,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Muon_trkdsz"                    ,&Muon_trkdsz                   );
 
   tree->Branch("ht"                             ,&ht                            );
+  tree->Branch("htoff"                             ,&htoff                            );
   tree->Branch("Muon_totPt"                     ,&Muon_totPt                    );
   tree->Branch("Electron_totPt"                 ,&Electron_totPt                );
   tree->Branch("PU_num"            	        ,&PU_num                        ,"PU_num/i");
@@ -551,6 +684,31 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_mvaDiscriminator"           ,&Jet_mvaDiscriminator          );
   tree->Branch("Jet_nConstituents"              ,&Jet_nConstituents             );
   tree->Branch("Jet_passId"                     ,&Jet_passId                    );
+  
+  tree->Branch("OffJet_pt"            	           ,&OffJet_pt                        );
+  tree->Branch("OffJet_eta"            	           ,&OffJet_eta                       );
+  tree->Branch("OffJet_phi"            	           ,&OffJet_phi                       );
+  tree->Branch("OffJet_m"            	             ,&OffJet_m                         );
+  tree->Branch("OffJet_area"            	         ,&OffJet_area                      );
+  tree->Branch("OffJet_chargedHadronEnergy"        ,&OffJet_chargedHadronEnergy       );
+  tree->Branch("OffJet_neutralHadronEnergy"        ,&OffJet_neutralHadronEnergy       );
+  tree->Branch("OffJet_photonEnergy"               ,&OffJet_photonEnergy 	        );
+  tree->Branch("OffJet_electronEnergy"             ,&OffJet_electronEnergy            );
+  tree->Branch("OffJet_muonEnergy"    	           ,&OffJet_muonEnergy                );
+  tree->Branch("OffJet_HFHadronEnergy"             ,&OffJet_HFHadronEnergy            );
+  tree->Branch("OffJet_HFEMEnergy"                 ,&OffJet_HFEMEnergy                );
+  tree->Branch("OffJet_HOEnergy"                   ,&OffJet_HOEnergy                  );
+  tree->Branch("OffJet_chargedHadronMultiplicity"  ,&OffJet_chargedHadronMultiplicity );
+  tree->Branch("OffJet_neutralHadronMultiplicity"  ,&OffJet_neutralHadronMultiplicity );
+  tree->Branch("OffJet_photonMultiplicity"         ,&OffJet_photonMultiplicity        );
+  tree->Branch("OffJet_electronMultiplicity"       ,&OffJet_electronMultiplicity      );
+  tree->Branch("OffJet_muonMultiplicity"           ,&OffJet_muonMultiplicity          );
+  tree->Branch("OffJet_HFHadronMultiplicity"       ,&OffJet_HFHadronMultiplicity      );
+  tree->Branch("OffJet_HFEMMultiplicity"           ,&OffJet_HFEMMultiplicity          );
+  tree->Branch("OffJet_csv"            	           ,&OffJet_csv                       );
+  tree->Branch("OffJet_mvaDiscriminator"           ,&OffJet_mvaDiscriminator          );
+  tree->Branch("OffJet_nConstituents"              ,&OffJet_nConstituents             );
+  tree->Branch("OffJet_passId"                     ,&OffJet_passId                    );
   
   tree->Branch("n_fatjet"                       ,&n_fatjet                      ,"n_fatjet/i");
   tree->Branch("FatJet_area"                    ,&FatJet_area                   );
@@ -607,40 +765,94 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //edm::Handle<edm::TriggerResults> triggerResultsH;
   //iEvent.getByToken(triggerResultsToken, triggerResultsH);
     
-  Handle<vector<ScoutingElectron> > electronsH;
-  iEvent.getByToken(electronsToken, electronsH);
+  //Handle<vector<ScoutingElectron> > electronsH;
+  //iEvent.getByToken(electronsToken, electronsH);
 
-  Handle<vector<ScoutingMuon> > muonsH;
-  iEvent.getByToken(muonsToken, muonsH);
+  //Handle<vector<ScoutingMuon> > muonsH;
+  //iEvent.getByToken(muonsToken, muonsH);
 
-  Handle<vector<ScoutingPhoton> > photonsH;
-  iEvent.getByToken(photonsToken, photonsH);
+  //Handle<vector<ScoutingPhoton> > photonsH;
+  //iEvent.getByToken(photonsToken, photonsH);
 
-  Handle<vector<ScoutingPFJet> > pfjetsH;
-  iEvent.getByToken(pfjetsToken, pfjetsH);
-    
-  Handle<vector<ScoutingParticle> > pfcandsH;
-  iEvent.getByToken(pfcandsToken, pfcandsH);
+  //Handle<vector<ScoutingPFJet> > pfjetsH;
+  //iEvent.getByToken(pfjetsToken, pfjetsH);
+  //  
+  //Handle<vector<ScoutingParticle> > pfcandsH;
+  //iEvent.getByToken(pfcandsToken, pfcandsH);
 
-  Handle<vector<ScoutingVertex> > verticesH;
+  //Handle<vector<ScoutingVertex> > verticesH;
  
-  if(auto handle = iEvent.getHandle(verticesToken2)){
-      iEvent.getByToken(verticesToken2, verticesH);
+  //if(auto handle = iEvent.getHandle(verticesToken2)){
+  //    iEvent.getByToken(verticesToken2, verticesH);
+  //}
+  //else {
+  //    iEvent.getByToken(verticesToken, verticesH);
+  //}
+  Handle<vector<reco::PFJet> > pfjetsoffH;
+
+  Handle<vector<ScoutingElectron> > electronsH;
+  Handle<vector<ScoutingMuon> > muonsH;
+  Handle<vector<ScoutingPhoton> > photonsH;
+  Handle<vector<ScoutingPFJet> > pfjetsH;
+  Handle<vector<ScoutingParticle> > pfcandsH;
+  Handle<vector<ScoutingVertex> > verticesH;
+  Handle<vector<reco::PFCandidate> > tracksH1;
+  Handle<vector<pat::PackedCandidate> > tracksH2;
+  bool mini_track = false;
+  //Handle<vector<reco::Track> > tracksH;
+  printf("ERA!!!! %d\n",era_16);
+  if(isMC and era_16 and not doSignal){ runScouting = false;}
+  if(isMC){runOffline = true;}
+  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  if(runScouting){
+  //if(not (isMC and era_16)){
+    iEvent.getByToken(electronsToken, electronsH);
+
+    iEvent.getByToken(muonsToken, muonsH);
+
+    iEvent.getByToken(photonsToken, photonsH);
+
+    iEvent.getByToken(pfjetsToken, pfjetsH);
+      
+    iEvent.getByToken(pfcandsToken, pfcandsH);
+
+ 
+    if(auto handle = iEvent.getHandle(verticesToken2)){
+        iEvent.getByToken(verticesToken2, verticesH);
+    }
+    else {
+        iEvent.getByToken(verticesToken, verticesH);
+    }
   }
-  else {
-      iEvent.getByToken(verticesToken, verticesH);
+  if(runOffline){
+  //if(isMC or monitor){
+    if(auto handle = iEvent.getHandle(offlineTracksToken)){
+      iEvent.getByToken(offlineTracksToken, tracksH1);
+      iEvent.getByToken(pfjetsoffToken, pfjetsoffH);
+      }else{
+      iEvent.getByToken(offlineTracksToken2, tracksH2);
+      mini_track = true;
+      }
   }
+  //if(mini_track){
+  //  auto tracksH = tracksH2;
+  //}else{
+  //  auto tracksH = tracksH1;
+  //} 
 
   Handle<vector<PileupSummaryInfo> > puInfo;
-
   if(auto handle = iEvent.getHandle(pileupInfoToken2)){
       iEvent.getByToken(pileupInfoToken2, puInfo);
   }
   else {
       iEvent.getByToken(pileupInfoToken, puInfo);
   }
+  
+  Handle<GenEventInfoProduct > genEvtInfo;
+  iEvent.getByToken(genEvtInfoToken, genEvtInfo);
 
   run = iEvent.eventAuxiliary().run();
+  event_ = iEvent.eventAuxiliary().event();
   lumSec = iEvent.eventAuxiliary().luminosityBlock();
 
   // Which triggers fired
@@ -661,7 +873,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
           hltResultName_.push_back(hltbitName);
-          ///std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
           //HLT Trigger DST_DoubleMu1_noVtx_CaloScouting_v2 0 0 DST_DoubleMu1_noVtx_CaloScouting_v*
           //HLT Trigger DST_DoubleMu3_noVtx_CaloScouting_Monitoring_v6 0 1 DST_DoubleMu3_noVtx_CaloScouting_v*
           //HLT Trigger DST_DoubleMu3_noVtx_CaloScouting_v6 0 1 DST_DoubleMu3_noVtx_CaloScouting_v*
@@ -700,7 +912,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   vector<ScoutingParticle> PFcands;
   PFcands.clear();
-
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto electrons_iter = electronsH->begin(); electrons_iter != electronsH->end(); ++electrons_iter) 
     {
       Electron_pt.push_back(electrons_iter->pt());
@@ -721,7 +934,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
       ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
       PFcands.push_back(tmp);
-    }
+    }}
 
   // *
   // Photons here
@@ -736,6 +949,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Photon_hcaliso.clear();
   n_pho = 0;
 
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto photons_iter = photonsH->begin(); photons_iter != photonsH->end(); ++photons_iter) {
     Photon_pt.push_back(photons_iter->pt());
     Photon_eta.push_back(photons_iter->eta());
@@ -747,7 +962,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     Photon_hcaliso.push_back(photons_iter->hcalIso());
     
     n_pho++;
-  }
+  }}
 
   // *
   // Primary vertices
@@ -760,7 +975,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Vertex_chi2.clear();
   Vertex_ndof.clear();
   Vertex_isValidVtx.clear();
-    for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
+  if(runScouting){
+  //if(not (isMC and era_16)){
+  for (auto vertices_iter = verticesH->begin(); vertices_iter != verticesH->end(); ++vertices_iter) {
         Vertex_x.push_back( vertices_iter->x() );
         Vertex_y.push_back( vertices_iter->y() );
         Vertex_z.push_back( vertices_iter->z() );
@@ -770,6 +987,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         Vertex_isValidVtx.push_back( vertices_iter->isValidVtx() );
         n_pvs++;
     }
+  }
   //bool runSig = false;
   //bool notData = true;
   //int counter=0;
@@ -778,7 +996,6 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       int pu_bunchcrossing = PVI->getBunchCrossing();
       if(pu_bunchcrossing ==0){
         PU_num = PVI->getTrueNumInteractions();
-      //printf("%d: %u \n",counter,PU_num);counter++;
       }
     }
   }
@@ -788,11 +1005,14 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   // Particle Flow candidates 
   // *
 
-
+  
+  if(runScouting){
+  //if(not (isMC and era_16)){
     for (auto pfcands_iter = pfcandsH->begin(); pfcands_iter != pfcandsH->end(); ++pfcands_iter) {
       ScoutingParticle tmp(MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->pt())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter->phi())),pfcands_iter->m(),pfcands_iter->pdgId(),pfcands_iter->vertex());
     
       PFcands.push_back(tmp);
+    }
     }
 
     //sort PFcands according to pT
@@ -1026,6 +1246,308 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   }
 
 }
+
+
+
+
+//if(isMC or monitor){
+if(runOffline){
+  offlineTrack_pt.clear();
+  offlineTrack_dxy.clear();
+  offlineTrack_dzError.clear();
+  offlineTrack_ptError.clear();
+  offlineTrack_quality.clear();
+  offlineTrack_chi2.clear();
+  offlineTrack_eta.clear();
+  offlineTrack_event.clear();
+  offlineTrack_m.clear();
+  offlineTrack_phi.clear();
+  offlineTrack_vz.clear();
+  offlineTrack_dR.clear();
+  offlineTrack_paired.clear();
+  offlineTrack_PFcandpt.clear();
+  offlineTrack_PFcanddz.clear();
+  offlineTrack_PFcandpv.clear();
+  offlineTrack_PFcandeta.clear();
+  offlineTrack_PFcandphi.clear();
+  offlineTrack_PFcandq.clear();
+  onlineTrack_dR.clear();
+  onlineTrack_paired.clear();
+  onlineTrack_offlinept.clear();
+  onlineTrack_offlineeta.clear();
+  onlineTrack_offlinephi.clear();
+  offlinematched_count =0;
+  offline_count =0;
+  offline_frac =0;
+  offlinematched_countHi =0;
+  offline_countHi =0;
+  offline_fracHi =0;
+  offlinematched_countLo =0;
+  offline_countLo =0;
+  offline_fracLo =0;
+  vector<vector<float>> offline_dr;
+  float pvsum[60] = {0};
+  float pvmax = 0;
+  int pvindex = -1;
+  if(mini_track){
+  for (auto tracks_iter = tracksH2->begin(); tracks_iter != tracksH2->end(); ++tracks_iter) {
+    //std::cout<< tracks_iter->hasTrackDetails() << std::endl;
+    if(tracks_iter->hasTrackDetails() == 0) continue;
+    if (tracks_iter->pt() < 0.5) continue;
+    if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+    if (abs(tracks_iter->charge()) != 1 ) continue;
+
+    int pvbin = static_cast<int>(tracks_iter->vz());
+    if(pvbin > 30) { pvbin = 30;}
+    if(pvbin < -30) { pvbin = -30;}
+    pvbin = pvbin + 30;
+    pvsum[pvbin] += tracks_iter->pt() * tracks_iter->pt();
+  }
+
+  }else{
+  for (auto tracks_iter = tracksH1->begin(); tracks_iter != tracksH1->end(); ++tracks_iter) {
+    if (tracks_iter->pt() < 0.5) continue;
+    if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+    if (abs(tracks_iter->charge()) != 1 ) continue;
+
+    int pvbin = static_cast<int>(tracks_iter->vz());
+    if(pvbin > 30) { pvbin = 30;}
+    if(pvbin < -30) { pvbin = -30;}
+    pvbin = pvbin + 30;
+    pvsum[pvbin] += tracks_iter->pt() * tracks_iter->pt();
+  }
+  }
+  for(int i=0; i < 60; i++){
+    if( pvmax < pvsum[i]){
+      pvmax = pvsum[i];
+      pvindex = i;
+    }
+  }
+  if(mini_track){
+  for (auto tracks_iter = tracksH2->begin(); tracks_iter != tracksH2->end(); ++tracks_iter) {
+    if(tracks_iter->hasTrackDetails() == 0) continue;
+    if (tracks_iter->pt() < 0.5) continue;
+    if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+    if (abs(tracks_iter->charge()) != 1 ) continue;
+
+    int pvbin = static_cast<int>(tracks_iter->vz());
+    if(pvbin > 30) { pvbin = 30;}
+    if(pvbin < -30) { pvbin = -30;}
+    pvbin = pvbin + 30;
+    //pvsum[pvbin] += tracks_iter->pt();
+    if(pvbin == pvindex){
+      offlineTrack_quality.push_back(1);
+    }else{
+      offlineTrack_quality.push_back(0);
+    }
+
+    offlineTrack_event.push_back(event_);
+    offlineTrack_pt.push_back(tracks_iter->pt());
+    //offlineTrack_dxy.push_back(tracks_iter->dxy());
+    offlineTrack_eta.push_back(tracks_iter->eta());
+    offlineTrack_m.push_back(tracks_iter->mass());
+    //offlineTrack_m.push_back(0.1395699);
+    offlineTrack_phi.push_back(tracks_iter->phi());
+    offlineTrack_vz.push_back(tracks_iter->vz());
+    offlineTrack_dzError.push_back(tracks_iter->dzError());
+    //offlineTrack_ptError.push_back(tracks_iter->ptError());
+    //offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
+    //offlineTrack_chi2.push_back(tracks_iter->chi2());
+    float mindR = 9999;
+    bool isMatched = false;
+    float matched_pt =0;
+    float matched_eta =0;
+    float matched_phi =0;
+    vector<float> offline_dr_row;
+    for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
+      if (pfcands_iter.pt() < 0.5) continue;
+      if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+      //if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
+      auto dR = deltaR2(tracks_iter->eta(),tracks_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+      offline_dr_row.push_back(dR);
+    }
+    offline_dr.push_back(offline_dr_row);
+    offline_count++;
+    if(tracks_iter->pt()>20){
+      offline_countHi++;
+    }else{
+      offline_countLo++;
+    }
+  }
+  }else{
+  for (auto tracks_iter = tracksH1->begin(); tracks_iter != tracksH1->end(); ++tracks_iter) {
+    if (tracks_iter->pt() < 0.5) continue;
+    if (abs(tracks_iter->eta()) >= 2.4 ) continue;
+    if (abs(tracks_iter->charge()) != 1 ) continue;
+
+    int pvbin = static_cast<int>(tracks_iter->vz());
+    if(pvbin > 30) { pvbin = 30;}
+    if(pvbin < -30) { pvbin = -30;}
+    pvbin = pvbin + 30;
+    //pvsum[pvbin] += tracks_iter->pt();
+    if(pvbin == pvindex){
+      offlineTrack_quality.push_back(1);
+    }else{
+      offlineTrack_quality.push_back(0);
+    }
+
+    offlineTrack_event.push_back(event_);
+    offlineTrack_pt.push_back(tracks_iter->pt());
+    //offlineTrack_dxy.push_back(tracks_iter->dxy());
+    offlineTrack_eta.push_back(tracks_iter->eta());
+    offlineTrack_m.push_back(tracks_iter->mass());
+    //offlineTrack_m.push_back(0.1395699);
+    offlineTrack_phi.push_back(tracks_iter->phi());
+    offlineTrack_vz.push_back(tracks_iter->vz());
+    offlineTrack_dzError.push_back(tracks_iter->dzError());
+    //offlineTrack_ptError.push_back(tracks_iter->ptError());
+    //offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
+    //offlineTrack_chi2.push_back(tracks_iter->chi2());
+    float mindR = 9999;
+    bool isMatched = false;
+    float matched_pt =0;
+    float matched_eta =0;
+    float matched_phi =0;
+    vector<float> offline_dr_row;
+    for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
+      if (pfcands_iter.pt() < 0.5) continue;
+      if (abs(pfcands_iter.eta()) >= 2.4 ) continue;
+      //if (getCharge(pfcands_iter.pdgId()) == 0 ) continue;
+      auto dR = deltaR2(tracks_iter->eta(),tracks_iter->phi(),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.eta())),MiniFloatConverter::float16to32(MiniFloatConverter::float32to16(pfcands_iter.phi())));
+      offline_dr_row.push_back(dR);
+    }
+    offline_dr.push_back(offline_dr_row);
+    offline_count++;
+    if(tracks_iter->pt()>20){
+      offline_countHi++;
+    }else{
+      offline_countLo++;
+    }
+  }
+  }
+
+  if(runScouting){
+    std::vector<int> used_offline;
+    std::vector<int> used_online;
+    std::vector<float> odr_matched;
+    float min;
+    do{
+      min = std::numeric_limits<float>::max();
+      int row =0;
+      int minrow=-1;
+      int mincol=-1;
+      for( auto & v : offline_dr){ //loops over dR values for each PFcand
+        if(std::find(used_offline.begin(), used_offline.end(), row) != used_offline.end()){row++; continue;}// skip if this row is already a matched pf Candidates and increase the row counter
+        int col=0;
+        for( auto & e : v){ // loops over dR values for each gen associated with this PFCand
+          if(std::find(used_online.begin(), used_online.end(), col) != used_online.end()){col++; continue;}// skip if this col is already a matched gen and increase the col counter
+          if(e <= min){ //finds min dR value within matrix. sets the used col and row position for the minimum as well as the new min dR value.
+             mincol = col;
+             minrow = row;
+             min = e;
+          }
+          col++; // gen counter position increment
+        }
+        row++; // pfcand counter positsion increment
+      }// all dR values have been looped over and the min dR has been found with position in gen and pfcand
+      if(minrow != -1 && mincol != -1){ // if there is a dR match
+          used_offline.push_back(minrow);// index of Pf cand with match
+          used_online.push_back(mincol);// index of gen cand with match
+          odr_matched.push_back(min);// dR between pF cand and gen
+      }
+    }while(min < 0.3); //cut off value for min dR
+  
+    for(int e = 0; e < static_cast<int>(offlineTrack_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
+      auto it = find(used_offline.begin(), used_offline.end(), e); // see if PF cand has a match
+      if(it != used_offline.end()){
+        float dR = odr_matched.at(it-used_offline.begin());// get dR associated with this PF cand
+        int mincol = used_online.at(it-used_offline.begin());// get dR associated with this PF cand
+  
+        offlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
+        if(dR < 0.02){
+          offlinematched_count++;
+          if(offlineTrack_pt.at(e)>20){
+            offlinematched_countHi++;
+          }else{
+            offlinematched_countLo++;
+          }
+        }
+  
+        if (mincol < 0){
+          offlineTrack_PFcandpt.push_back( -1);
+          offlineTrack_PFcandeta.push_back(999);
+          offlineTrack_PFcanddz.push_back(999);
+          offlineTrack_PFcandpv.push_back(999);
+          offlineTrack_PFcandphi.push_back(999);
+          offlineTrack_PFcandq.push_back(999);
+          offlineTrack_paired.push_back(false);
+        }else{
+          offlineTrack_paired.push_back(true);
+          offlineTrack_PFcandpt.push_back( PFcand_pt.at( mincol));
+          offlineTrack_PFcandpv.push_back( PFcand_vertex.at( mincol));
+          offlineTrack_PFcandeta.push_back(PFcand_eta.at(mincol));
+          offlineTrack_PFcandphi.push_back(PFcand_phi.at(mincol));
+          offlineTrack_PFcandq.push_back(PFcand_q.at(mincol));
+          offlineTrack_PFcanddz.push_back(0);
+        }
+      }
+      else{
+        offlineTrack_dR.push_back(0.3);//no match found set as fake value
+        offlineTrack_PFcandpt.push_back( -1);
+        offlineTrack_PFcandeta.push_back(999);
+        offlineTrack_PFcandphi.push_back(999);
+        offlineTrack_PFcandpv.push_back(999);
+        offlineTrack_PFcanddz.push_back(999);
+        offlineTrack_PFcandq.push_back(999);
+        offlineTrack_paired.push_back(false);
+      }
+    }
+    offline_frac = offlinematched_count/offline_count;
+    offline_fracHi = offlinematched_countHi/offline_countHi;
+    offline_fracLo = offlinematched_countLo/offline_countLo;
+    for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
+      auto it = find(used_online.begin(), used_online.end(), e); // see if PF cand has a match
+      if(it != used_online.end()){
+        float dR = odr_matched.at(it-used_online.begin());// get dR associated with this PF cand
+        int minrow = used_offline.at(it-used_online.begin());// get dR associated with this PF cand
+  
+        onlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
+        if (minrow < 0){
+          onlineTrack_offlinept.push_back( -1);
+          onlineTrack_offlineeta.push_back(999);
+          onlineTrack_offlinephi.push_back(999);
+          onlineTrack_paired.push_back(false);
+        }else{
+          onlineTrack_offlinept.push_back( offlineTrack_pt.at( minrow));
+          onlineTrack_offlineeta.push_back(offlineTrack_eta.at(minrow));
+          onlineTrack_offlinephi.push_back(offlineTrack_phi.at(minrow));
+          onlineTrack_paired.push_back(true);
+        }
+      }
+      else{
+        onlineTrack_dR.push_back(0.3);//no match found set as fake value
+        onlineTrack_offlinept.push_back( -1);
+        onlineTrack_offlineeta.push_back(999);
+        onlineTrack_offlinephi.push_back(999);
+        onlineTrack_paired.push_back(false);
+      }
+    }
+  }
+///////////////////////////////////////
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////////////////
 
   // 
@@ -1060,7 +1582,10 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   Muon_trketaerror.clear();
   Muon_trkdszerror.clear();
   Muon_trkdsz.clear();
-  n_mu=0;
+  n_mu=0;  
+  
+  if(runScouting){
+  //if(not (isMC and era_16)){
   for (auto muons_iter = muonsH->begin(); muons_iter != muonsH->end(); ++muons_iter) {
  	Muon_pt.push_back(muons_iter->pt()); 
    	Muon_eta.push_back(muons_iter->eta());
@@ -1092,8 +1617,8 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
     Muon_trkdszerror.push_back(muons_iter->trk_dsz());
     Muon_trkdsz.push_back(muons_iter->trk_dszError());
     n_mu++;
- }
-
+  }
+  }
   // * 
   // Jets 
   // * 
@@ -1124,8 +1649,12 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   n_jet = 0;
   n_jetId = 0;
   ht = 0;
+  htoff = 0;
   passJetId = false;
-   for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
+
+  if(runScouting){
+  //if(not (isMC and era_16)){
+  for (auto pfjet = pfjetsH->begin(); pfjet != pfjetsH->end(); ++pfjet) {
 
     Jet_pt .push_back( pfjet->pt() );
     Jet_eta.push_back( pfjet->eta());
@@ -1162,10 +1691,55 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
 
     // apply jet ID 
     if ( passJetId == false ) continue; 
-    if (pfjet->pt() < 40){continue;}//raise pt threshold for HT calculation 
+    if (pfjet->pt() < 30){continue;}//raise pt threshold for HT calculation 
     ht += pfjet->pt() ; 
     n_jetId++ ; 
 
+  }
+  }
+  if(runOffline and not mini_track){
+  for (auto pfjet = pfjetsoffH->begin(); pfjet != pfjetsoffH->end(); ++pfjet) {
+
+    OffJet_pt .push_back( pfjet->pt() );
+    OffJet_eta.push_back( pfjet->eta());
+    OffJet_phi.push_back( pfjet->phi());
+    OffJet_m  .push_back( pfjet->mass()  );
+
+    OffJet_area.push_back( pfjet->jetArea());
+
+    OffJet_chargedHadronEnergy.push_back( pfjet->chargedHadronEnergy());
+    OffJet_neutralHadronEnergy.push_back( pfjet->neutralHadronEnergy());
+    OffJet_photonEnergy       .push_back( pfjet->photonEnergy()       );
+    OffJet_electronEnergy     .push_back( pfjet->electronEnergy()     );
+    OffJet_muonEnergy         .push_back( pfjet->muonEnergy()     );
+    OffJet_HFHadronEnergy     .push_back( pfjet->HFHadronEnergy() );
+    OffJet_HFEMEnergy         .push_back( pfjet->HFEMEnergy()     );
+    OffJet_HOEnergy           .push_back( pfjet->hoEnergy()       );
+    
+    OffJet_chargedHadronMultiplicity.push_back( pfjet->chargedHadronMultiplicity());
+    OffJet_neutralHadronMultiplicity.push_back( pfjet->neutralHadronMultiplicity());
+    OffJet_photonMultiplicity       .push_back( pfjet->photonMultiplicity()       );
+    OffJet_electronMultiplicity     .push_back( pfjet->electronMultiplicity()     );
+    OffJet_muonMultiplicity         .push_back( pfjet->muonMultiplicity()         );
+    OffJet_HFHadronMultiplicity     .push_back( pfjet->HFHadronMultiplicity()     );
+    OffJet_HFEMMultiplicity         .push_back( pfjet->HFEMMultiplicity()         );
+
+    //OffJet_csv             .push_back( pfjet->csv() );
+    //OffJet_mvaDiscriminator.push_back( pfjet->mvaDiscriminator()    );
+    //OffJet_nConstituents   .push_back( pfjet->constituents().size() );
+    
+    //n_jet++;
+
+    passJetId = jetIDoff(*pfjet);
+    OffJet_passId.push_back( passJetId );
+
+    //// apply jet ID 
+    if ( passJetId == false ) continue; 
+    if (pfjet->pt() < 30){continue;}//raise pt threshold for HT calculation 
+    htoff += pfjet->pt() ; 
+    //n_jetId++ ; 
+
+  }  
   }
   // loop through constituents & save
 
@@ -1280,11 +1854,27 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
   }
 
   Handle<double> rhoH;
+  Handle<double> rhoH2;
+  if(runScouting){
+  //if(not (isMC and era_16)){
   iEvent.getByToken(rhoToken, rhoH);
   rho = *rhoH;
-  Handle<double> rhoH2;
   iEvent.getByToken(rhoToken2, rhoH2);
   rho2 = *rhoH2;
+  }else{ rho=0;rho2=0;}
+
+  if(doSignal){
+    PSweights = genEvtInfo->weights();
+    Handle<double> prefirewgt;
+    iEvent.getByToken(prefireToken, prefirewgt);
+    prefire = *prefirewgt;
+    Handle<double> prefirewgtup;
+    iEvent.getByToken(prefireTokenup, prefirewgtup);
+    prefireup = *prefirewgtup;
+    Handle<double> prefirewgtdown;
+    iEvent.getByToken(prefireTokendown, prefirewgtdown);
+    prefiredown = *prefirewgtdown;
+  }
 
  // done for all events, no need to reset?
  EventShapeVariables event_algo(event_tracks);
@@ -1476,6 +2066,23 @@ int ScoutingNanoAOD::getCharge(int pdgId) {
   // 22 = photon 
   // 1 = HF hadron, where HF means forward calo
   // 2 = HF em particle, where HF means forward calo
+}
+bool ScoutingNanoAOD::jetIDoff(const reco::PFJet &pfjet){
+// https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018
+    //moved HT cut
+    TLorentzVector jet; 
+    jet.SetPtEtaPhiM(pfjet.pt(), pfjet.eta(), pfjet.phi(), pfjet.mass() );
+    
+    float NHF  = pfjet.neutralHadronEnergy()/jet.E();
+    float NEMF = pfjet.photonEnergy()/jet.E();
+    float CHF  = pfjet.chargedHadronEnergy()/jet.E();
+    float MUF  = pfjet.muonEnergy()/jet.E();
+    float CEMF = pfjet.electronEnergy()/jet.E();
+    float NumConst = pfjet.chargedHadronMultiplicity()+pfjet.neutralHadronMultiplicity()+pfjet.photonMultiplicity() + pfjet.electronMultiplicity() + pfjet.muonMultiplicity() + pfjet.HFHadronMultiplicity() + pfjet.HFEMMultiplicity();
+    float CHM      = pfjet.chargedHadronMultiplicity() +pfjet.electronMultiplicity() + pfjet.muonMultiplicity(); 
+    bool passID = (abs(pfjet.eta())<=2.6 && CEMF<0.8 && CHM>0 && CHF>0 && NumConst>1 && NEMF<0.9 && MUF <0.8 && NHF < 0.9 );
+
+    return passID;
 }
 bool ScoutingNanoAOD::jetID(const ScoutingPFJet &pfjet){
 // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2018

@@ -100,6 +100,25 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not signal is run'
 )
+params.register(
+    'runScouting', 
+    True, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
+params.register(
+    'runOffline', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
+
+params.register(
+    'monitor', 
+    False, 
+    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+    'Flag to indicate whether or not signal is run'
+)
 
 # Define the process
 process = cms.Process("LL")
@@ -171,12 +190,15 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
-    pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
-    electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
-    maxRapidity = cms.double(5.0),
-    gridSpacing = cms.double(0.55),
-)
+if(params.runScouting):
+  process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
+      pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
+      electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
+      maxRapidity = cms.double(5.0),
+      gridSpacing = cms.double(0.55),
+  )
+#print("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d")
+
 
 HLTInfo = [
     "DST_DoubleMu1_noVtx_CaloScouting_v*",
@@ -204,9 +226,13 @@ L1Info = [
 
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doL1              = cms.bool(False),
-    doData            = cms.bool(not params.isMC),
+    doData            = cms.bool(not params.isMC and not params.signal),
     doSignal          = cms.bool(params.signal),
     isMC              = cms.bool(params.isMC),
+    monitor           = cms.bool(params.monitor),
+    era_16            = cms.bool(params.era == "2016"),
+    runScouting          = cms.bool(params.runScouting),
+    runOffline          = cms.bool(params.runOffline),
     stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
@@ -230,14 +256,18 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     electrons         = cms.InputTag("hltScoutingEgammaPacker"),
     photons           = cms.InputTag("hltScoutingEgammaPacker"),
     pfcands           = cms.InputTag("hltScoutingPFPacker"),
+    pfjetsoff         = cms.InputTag("ak4PFJets"),
     pfjets            = cms.InputTag("hltScoutingPFPacker"),
     vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
+    offlineTracks     = cms.InputTag("particleFlow"),
+    offlineTracks2     = cms.InputTag("packedPFCandidates"),
+    #offlineTracks     = cms.InputTag("generalTracks"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
+    geneventinfo     = cms.InputTag("generator"),
     gens              = cms.InputTag("genParticles"),
     gens_sig          = cms.InputTag("prunedGenParticles"),
-    #geneventinfo     = cms.InputTag("generator"),
     rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
     rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
 
@@ -250,7 +280,22 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 
 # add any intermediate modules to this task list
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
-process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
+if(params.runScouting):
+  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
-process.p = cms.Path(process.mmtree)
-process.p.associate(process.myTask)
+if(params.signal):
+  from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
+  process.prefiringweight = l1PrefiringWeightProducer.clone(
+  TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
+  #TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), #this should be the slimmedJets collection with up to date JECs 
+  DataEraECAL = cms.string("2017BtoF"), #Use 2016BtoH for 2016
+  DataEraMuon = cms.string("20172018"), #Use 2016 for 2016
+  UseJetEMPt = cms.bool(False),
+  PrefiringRateSystematicUnctyECAL = cms.double(0.2),
+  PrefiringRateSystematicUnctyMuon = cms.double(0.2)
+  )
+  process.p = cms.Path(process.prefiringweight* process.mmtree)
+else:
+  process.p = cms.Path(process.mmtree)
+if(params.runScouting):
+  process.p.associate(process.myTask)
