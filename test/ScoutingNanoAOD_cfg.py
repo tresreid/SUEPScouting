@@ -190,7 +190,7 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-if(params.era != "2016"):
+if(params.runScouting):
   process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
       pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
       electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
@@ -261,6 +261,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     vertices_2016     = cms.InputTag("hltScoutingPFPacker",""), #Will try 2016 Packer and default to others if failed
     vertices          = cms.InputTag("hltScoutingPrimaryVertexPacker","primaryVtx"),
     offlineTracks     = cms.InputTag("particleFlow"),
+    offlineTracks2     = cms.InputTag("packedPFCandidates"),
     #offlineTracks     = cms.InputTag("generalTracks"),
     pileupinfo        = cms.InputTag("addPileupInfo"),
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
@@ -279,7 +280,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 
 # add any intermediate modules to this task list
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
-if(params.era != "2016"):
+if(params.runScouting):
   process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
 if(params.signal):
@@ -296,5 +297,5 @@ if(params.signal):
   process.p = cms.Path(process.prefiringweight* process.mmtree)
 else:
   process.p = cms.Path(process.mmtree)
-if(params.era != "2016"):
+if(params.runScouting):
   process.p.associate(process.myTask)
