@@ -141,7 +141,7 @@ private:
   const edm::EDGetTokenT<GenEventInfoProduct>                  genEvtInfoToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken;
   const edm::EDGetTokenT<std::vector<reco::GenParticle> >  	gensToken2;
-  const edm::EDGetTokenT<double>  	rhoToken;
+//  const edm::EDGetTokenT<double>  	rhoToken;
   const edm::EDGetTokenT<double>  	rhoToken2;
   const edm::EDGetTokenT<double>  	prefireToken;
   const edm::EDGetTokenT<double>  	prefireTokenup;
@@ -409,7 +409,7 @@ private:
   vector<Float16_t>            Vertex_ndof;
   vector<Float16_t>            Vertex_isValidVtx;
 
-  float                        rho;
+//  float                        rho;
   float                        rho2;
   float                        prefire;
   float                        prefireup;
@@ -459,7 +459,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   genEvtInfoToken          (consumes<GenEventInfoProduct>                    (iConfig.getParameter<edm::InputTag>("geneventinfo"))),    
   gensToken                (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens"))),
   gensToken2               (consumes<std::vector<reco::GenParticle> >        (iConfig.getParameter<edm::InputTag>("gens_sig"))),
-  rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
+  //rhoToken                 (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho"))),
   rhoToken2                (consumes<double>                                 (iConfig.getParameter<edm::InputTag>("rho2"))),
   prefireToken             (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProb"))),
   prefireTokenup           (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbUp"))),
@@ -728,8 +728,9 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("FatJet_mtrim"                   ,&FatJet_mtrim                  );
   tree->Branch("FatJet_nconst"                  ,&FatJet_nconst                 );
 
-  tree->Branch("rho"                            ,&rho                           );
-  tree->Branch("rho2"                           ,&rho2                          );
+  tree->Branch("rho"                            ,&rho2                           );
+  //tree->Branch("rho"                            ,&rho                           );
+  //tree->Branch("rho2"                           ,&rho2                          );
 
   tree->Branch("event_isotropy"                 ,&event_isotropy                );
   tree->Branch("event_circularity"              ,&event_circularity             );
@@ -1862,15 +1863,16 @@ if(runOffline){
     n_pfcand_tot++;
   }
 
-  Handle<double> rhoH;
+//  Handle<double> rhoH;
   Handle<double> rhoH2;
   if(runScouting){
   //if(not (isMC and era_16)){
-  iEvent.getByToken(rhoToken, rhoH);
-  rho = *rhoH;
+  //iEvent.getByToken(rhoToken, rhoH);
+  //rho = *rhoH;
   iEvent.getByToken(rhoToken2, rhoH2);
   rho2 = *rhoH2;
-  }else{ rho=0;rho2=0;}
+  }else{// rho=0;
+    rho2=0;}
 
   if(doSignal){
     PSweights = genEvtInfo->weights();

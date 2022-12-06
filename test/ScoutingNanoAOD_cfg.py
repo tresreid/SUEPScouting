@@ -190,18 +190,18 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-runRho = not(params.isMC and params.era=="2016") 
-if(runRho):
-  if params.era=="2015":
-    runRho = False
-#if(params.runScouting):
-if(runRho):
-  process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
-      pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
-      electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
-      maxRapidity = cms.double(5.0),
-      gridSpacing = cms.double(0.55),
-  )
+#runRho = not(params.isMC and params.era=="2016") 
+#if(runRho):
+#  if params.era=="2015":
+#    runRho = False
+##if(params.runScouting):
+#if(runRho):
+#  process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
+#      pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
+#      electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
+#      maxRapidity = cms.double(5.0),
+#      gridSpacing = cms.double(0.55),
+#  )
 #print("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d")
 
 
@@ -275,7 +275,7 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     geneventinfo     = cms.InputTag("generator"),
     gens              = cms.InputTag("genParticles"),
     gens_sig          = cms.InputTag("prunedGenParticles"),
-    rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
+    #rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
     rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
 
     # for JEC corrections eventually
@@ -288,8 +288,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 # add any intermediate modules to this task list
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
 #if(params.runScouting):
-if(runRho):
-  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
+#if(runRho):
+#  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
 if(params.signal):
   from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
@@ -306,5 +306,5 @@ if(params.signal):
 else:
   process.p = cms.Path(process.mmtree)
 #if(params.runScouting):
-if(runRho):
-  process.p.associate(process.myTask)
+#if(runRho):
+#  process.p.associate(process.myTask)
