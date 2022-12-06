@@ -162,8 +162,8 @@ private:
   bool isMC;
   bool monitor;
   bool era_16;
-  bool runScouting;
-  bool runOffline;
+  bool runScouting = false;
+  bool runOffline =false;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -470,8 +470,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   isMC                     (iConfig.existsAs<bool>("isMC")              ?    iConfig.getParameter<bool>  ("isMC")            : true),
   monitor                  (iConfig.existsAs<bool>("monitor")           ?    iConfig.getParameter<bool>  ("monitor")           : false),
   era_16                   (iConfig.existsAs<bool>("era_16")            ?    iConfig.getParameter<bool>  ("era_16")            : false),
-  runScouting              (iConfig.existsAs<bool>("runScouting")       ?    iConfig.getParameter<bool>  ("runScouting")       : true),
-  runOffline               (iConfig.existsAs<bool>("runOffline")        ?    iConfig.getParameter<bool>  ("runOffline")        : false),
+//  runScouting              (iConfig.existsAs<bool>("runScouting")       ?    iConfig.getParameter<bool>  ("runScouting")       : true),
+//  runOffline               (iConfig.existsAs<bool>("runOffline")        ?    iConfig.getParameter<bool>  ("runOffline")        : false),
 
   //if(isMC &&
 
@@ -801,8 +801,17 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   bool mini_track = false;
   //Handle<vector<reco::Track> > tracksH;
   printf("ERA!!!! %d\n",era_16);
-  if(isMC and era_16 and not doSignal){ runScouting = false;}
-  if(isMC){runOffline = true;}
+  //if(isMC and era_16 and not doSignal){ runScouting = false;}
+  //if(isMC){runOffline = true;}
+  if(auto handle = iEvent.getHandle(pfcandsToken)){
+    runScouting = true;
+  }
+  if(auto handle = iEvent.getHandle(offlineTracksToken)){
+    runOffline = true;
+  }
+  if(auto handle = iEvent.getHandle(offlineTracksToken2)){
+    runOffline = true;
+  }
   printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
   if(runScouting){
   //if(not (isMC and era_16)){
@@ -1353,11 +1362,11 @@ if(runOffline){
     //offlineTrack_ptError.push_back(tracks_iter->ptError());
     //offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
     //offlineTrack_chi2.push_back(tracks_iter->chi2());
-    float mindR = 9999;
-    bool isMatched = false;
-    float matched_pt =0;
-    float matched_eta =0;
-    float matched_phi =0;
+    //float mindR = 9999;
+    //bool isMatched = false;
+    //float matched_pt =0;
+    //float matched_eta =0;
+    //float matched_phi =0;
     vector<float> offline_dr_row;
     for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
       if (pfcands_iter.pt() < 0.5) continue;
@@ -1403,11 +1412,11 @@ if(runOffline){
     //offlineTrack_ptError.push_back(tracks_iter->ptError());
     //offlineTrack_quality.push_back(tracks_iter->quality(Track::highPurity));
     //offlineTrack_chi2.push_back(tracks_iter->chi2());
-    float mindR = 9999;
-    bool isMatched = false;
-    float matched_pt =0;
-    float matched_eta =0;
-    float matched_phi =0;
+    //float mindR = 9999;
+    //bool isMatched = false;
+    //float matched_pt =0;
+    //float matched_eta =0;
+    //float matched_phi =0;
     vector<float> offline_dr_row;
     for(auto & pfcands_iter : PFcands ){ //fills PFcand track info
       if (pfcands_iter.pt() < 0.5) continue;

@@ -100,18 +100,18 @@ params.register(
     VarParsing.multiplicity.singleton,VarParsing.varType.bool,
     'Flag to indicate whether or not signal is run'
 )
-params.register(
-    'runScouting', 
-    True, 
-    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-    'Flag to indicate whether or not signal is run'
-)
-params.register(
-    'runOffline', 
-    False, 
-    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-    'Flag to indicate whether or not signal is run'
-)
+#params.register(
+#    'runScouting', 
+#    True, 
+#    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+#    'Flag to indicate whether or not signal is run'
+#)
+#params.register(
+#    'runOffline', 
+#    False, 
+#    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+#    'Flag to indicate whether or not signal is run'
+#)
 
 params.register(
     'monitor', 
@@ -190,7 +190,12 @@ process.gentree = cms.EDAnalyzer("LHEWeightsTreeMaker",
 )
 
 # get rho producer
-if(params.runScouting):
+runRho = not(params.isMC and params.era=="2016") 
+if(runRho):
+  if params.era=="2015":
+    runRho = False
+#if(params.runScouting):
+if(runRho):
   process.fixedGridRhoFastjetAllScouting = cms.EDProducer("FixedGridRhoProducerFastjetScouting",
       pfCandidatesTag = cms.InputTag("hltScoutingPFPacker"),
       electronsTag = cms.InputTag("hltScoutingEgammaPacker"),
@@ -231,8 +236,10 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     isMC              = cms.bool(params.isMC),
     monitor           = cms.bool(params.monitor),
     era_16            = cms.bool(params.era == "2016"),
-    runScouting          = cms.bool(params.runScouting),
-    runOffline          = cms.bool(params.runOffline),
+    #runScouting          = cms.bool(params.runScouting),
+    #runOffline          = cms.bool(params.runOffline),
+    #runScouting          = cms.bool(not(params.isMC and params.era == 2016)), #always run scouting except 2016MC
+    #runOffline          = cms.bool(params.isMC and not params.signal), #only run offline for QCD
     stageL1Trigger    = cms.uint32(2),
 
     hltProcess=cms.string("HLT"),
@@ -280,7 +287,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 
 # add any intermediate modules to this task list
 # then unscheduled mode will call them automatically when the final module (mmtree) consumes their products
-if(params.runScouting):
+#if(params.runScouting):
+if(runRho):
   process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
 if(params.signal):
@@ -297,5 +305,6 @@ if(params.signal):
   process.p = cms.Path(process.prefiringweight* process.mmtree)
 else:
   process.p = cms.Path(process.mmtree)
-if(params.runScouting):
+#if(params.runScouting):
+if(runRho):
   process.p.associate(process.myTask)
