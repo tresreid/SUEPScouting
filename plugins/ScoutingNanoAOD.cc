@@ -187,8 +187,9 @@ private:
   std::vector<std::string>     hltResultName_;
   vector<double>            PSweights;
 
-  UInt_t scouting_count; 
-  UInt_t veto_count;
+  UInt_t scouting_trig; 
+  UInt_t offline_trig; 
+  UInt_t veto_trig;
   //Photon
   UInt_t n_pho;
   vector<Float16_t> 	       Photon_pt;
@@ -546,8 +547,9 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Electron_d0"               ,&Electron_d0              );
   tree->Branch("Electron_dz"               ,&Electron_dz              );
 
-  tree->Branch("scouting_count"            	        ,&scouting_count 			,"scounting_count/i");
-  tree->Branch("veto_count"            	        ,&veto_count 			,"veto_count/i");
+  tree->Branch("scouting_trig"            	        ,&scouting_trig 			,"scounting_trig/i");
+  tree->Branch("offline_trig"            	        ,&offline_trig 			,"offline_trig/i");
+  tree->Branch("veto_trig"            	        ,&veto_trig 			,"veto_trig/i");
   //Photons
   tree->Branch("n_pho"            	        ,&n_pho 			,"n_pho/i");
   tree->Branch("Photon_pt"            	        ,&Photon_pt                     );
@@ -889,8 +891,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByToken(triggerBits_, triggerBits);
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
-  scouting_count=0; 
-  veto_count=0; 
+  scouting_trig=0; 
+  offline_trig=0; 
+  veto_trig=0; 
   for(size_t j = 0; j < hltSeeds_.size(); j++){
         TPRegexp pattern(hltSeeds_[j]);
         TPRegexp pattern1("DST_HT410_PFScouting_v");
@@ -898,6 +901,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         TPRegexp pattern3("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v*");
         TPRegexp pattern4("HLT_Ele32_WPTight_Gsf_v*");
         TPRegexp pattern5("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v*");
+        TPRegexp pattern6("HLT_PFHT1050_v*");
         //std::cout<<"seed: "<<hltSeeds_[j]<<std::endl;
     for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
       const std::string& hltbitName = names.triggerName(i);
@@ -907,7 +911,12 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         if( 
           TString(hltpathName).Contains(pattern1) and hltpassFinal)
           {
-          scouting_count=1;
+          scouting_trig=1;
+          }
+        if( 
+          TString(hltpathName).Contains(pattern6) and hltpassFinal)
+          {
+          offline_trig=1;
           }
         if( hltpassFinal and (
           TString(hltpathName).Contains(pattern2)
@@ -917,7 +926,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
           ) 
           ){
           //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
-          veto_count=1;
+          veto_trig=1;
         } 
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
