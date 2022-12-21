@@ -187,6 +187,9 @@ private:
   std::vector<std::string>     hltResultName_;
   vector<double>            PSweights;
 
+  UInt_t scouting_trig; 
+  UInt_t offline_trig; 
+  UInt_t veto_trig;
   //Photon
   UInt_t n_pho;
   vector<Float16_t> 	       Photon_pt;
@@ -215,7 +218,9 @@ private:
   vector<Float16_t>            Electron_charge;
   vector<Float16_t>            Electron_ecaliso;
   vector<Float16_t>	       Electron_hcaliso;
-  vector<Float16_t>            Electron_tkiso;
+  vector<Float16_t>            Electron_trkiso;
+  vector<Float16_t>            Electron_combinediso;
+  vector<bool>            Electron_ID;
 
   //Muon
   UInt_t n_mu;
@@ -227,6 +232,8 @@ private:
   vector<Float16_t>            Muon_hcaliso;
   vector<Float16_t>            Muon_trkiso;
   vector<Float16_t>            Muon_chi2;
+  vector<bool>                 Muon_isGlobalMuon;
+  vector<bool>                 Muon_isTrackerMuon;
   vector<Float16_t>            Muon_ndof;
   vector<Float16_t>            Muon_charge;
   vector<Float16_t>            Muon_dxy;
@@ -525,14 +532,24 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Electron_phi"                   ,&Electron_phi                  );
   tree->Branch("Electron_charge"                ,&Electron_charge               );
   tree->Branch("Electron_m"            	        ,&Electron_m                    );
-  tree->Branch("Electron_tkiso"                 ,&Electron_tkiso 	        );
+  tree->Branch("Electron_trkiso"                 ,&Electron_trkiso 	        );
   tree->Branch("Electron_HoE"                   ,&Electron_HoE                  );
   tree->Branch("Electron_sigmaietaieta"         ,&Electron_sigmaietaieta        );
   tree->Branch("Electron_dphiin"                ,&Electron_dphiin 	        );
   tree->Branch("Electron_detain"                ,&Electron_detain 	        );
   tree->Branch("Electron_mHits"                 ,&Electron_mHits 	        );
   tree->Branch("Electron_ooEMOop"               ,&Electron_ooEMOop              );
+  tree->Branch("Electron_trkiso"               ,&Electron_trkiso         );
+  tree->Branch("Electron_ecaliso"               ,&Electron_ecaliso              );
+  tree->Branch("Electron_hcaliso"               ,&Electron_hcaliso              );
+  tree->Branch("Electron_combinediso"               ,&Electron_combinediso   );
+  tree->Branch("Electron_ID"               ,&Electron_ID   );
+  tree->Branch("Electron_d0"               ,&Electron_d0              );
+  tree->Branch("Electron_dz"               ,&Electron_dz              );
 
+  tree->Branch("scouting_trig"            	        ,&scouting_trig 			,"scounting_trig/i");
+  tree->Branch("offline_trig"            	        ,&offline_trig 			,"offline_trig/i");
+  tree->Branch("veto_trig"            	        ,&veto_trig 			,"veto_trig/i");
   //Photons
   tree->Branch("n_pho"            	        ,&n_pho 			,"n_pho/i");
   tree->Branch("Photon_pt"            	        ,&Photon_pt                     );
@@ -631,8 +648,10 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Muon_hcaliso"                   ,&Muon_hcaliso                  );
   tree->Branch("Muon_trkiso"                    ,&Muon_trkiso                   );
   tree->Branch("Muon_chi2"                      ,&Muon_chi2                     );
+  tree->Branch("Muon_isGlobalMuon"              ,&Muon_isGlobalMuon             );
+  tree->Branch("Muon_isTrackerMuon"             ,&Muon_isTrackerMuon            );
   tree->Branch("Muon_ndof"                      ,&Muon_ndof                     );
-  tree->Branch("Muon_charge"                    ,&Muon_charge	                );
+  tree->Branch("Muon_charge"                    ,&Muon_charge	                  );
   tree->Branch("Muon_dxy"                       ,&Muon_dxy                      );
   tree->Branch("Muon_dz"                        ,&Muon_dz                       );
   tree->Branch("Muon_nvalidmuon_hits"           ,&Muon_nvalidmuon_hits          );
@@ -801,7 +820,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<pat::PackedCandidate> > tracksH2;
   bool mini_track = false;
   //Handle<vector<reco::Track> > tracksH;
-  printf("ERA!!!! %d\n",era_16);
+  //printf("ERA!!!! %d\n",era_16);
   //if(isMC and era_16 and not doSignal){ runScouting = false;}
   //if(isMC){runOffline = true;}
   if(auto handle = iEvent.getHandle(pfcandsToken)){
@@ -813,7 +832,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   if(auto handle = iEvent.getHandle(offlineTracksToken2)){
     runOffline = true;
   }
-  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  //printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
   if(runScouting){
   //if(not (isMC and era_16)){
     iEvent.getByToken(electronsToken, electronsH);
@@ -872,14 +891,43 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByToken(triggerBits_, triggerBits);
 
   const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
- 
+  scouting_trig=0; 
+  offline_trig=0; 
+  veto_trig=0; 
   for(size_t j = 0; j < hltSeeds_.size(); j++){
         TPRegexp pattern(hltSeeds_[j]);
+        TPRegexp pattern1("DST_HT410_PFScouting_v");
+        TPRegexp pattern2("HLT_IsoMu24_v*");
+        TPRegexp pattern3("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v*");
+        TPRegexp pattern4("HLT_Ele32_WPTight_Gsf_v*");
+        TPRegexp pattern5("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v*");
+        TPRegexp pattern6("HLT_PFHT1050_v*");
         //std::cout<<"seed: "<<hltSeeds_[j]<<std::endl;
     for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i) {                                                          
       const std::string& hltbitName = names.triggerName(i);
       std::string hltpathName = hltbitName;
       bool hltpassFinal = triggerBits->accept(i);
+        //std::cout<<"path: "<<hltpathName<<" pass: "<<hltpassFinal<<" out: "<<TString(hltpathName).Contains(pattern1)<<" out2: " << TString(hltpathName).Contains(pattern2)<<std::endl;
+        if( 
+          TString(hltpathName).Contains(pattern1) and hltpassFinal)
+          {
+          scouting_trig=1;
+          }
+        if( 
+          TString(hltpathName).Contains(pattern6) and hltpassFinal)
+          {
+          offline_trig=1;
+          }
+        if( hltpassFinal and (
+          TString(hltpathName).Contains(pattern2)
+          or TString(hltpathName).Contains(pattern3)
+          or TString(hltpathName).Contains(pattern4)
+          or TString(hltpathName).Contains(pattern5)
+          ) 
+          ){
+          //std::cout << "HLT Trigger " << hltbitName << " " << hltpassFinal<< " "<< j <<" "<<hltSeeds_[j]<< std::endl;
+          veto_trig=1;
+        } 
         if( TString(hltpathName).Contains(pattern)){
           hltResult_.push_back(hltpassFinal);
           hltResultName_.push_back(hltbitName);
@@ -897,7 +945,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       
      
   }
-
+  //float frac_count = veto_count/scouting_count;
+  //printf("v/s counts: %d/%d = %f\n",veto_count,scouting_count,frac_count);
   // *
   // Electrons here, also electrons are not contained in pf candidate collection. need to merge them explicitly
   // *
@@ -917,7 +966,9 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Electron_charge.clear();
   Electron_ecaliso.clear();
   Electron_hcaliso.clear();
-  Electron_tkiso.clear();
+  Electron_trkiso.clear();
+  Electron_combinediso.clear();
+  Electron_ID.clear();
   n_ele = 0;
 
   vector<ScoutingParticle> PFcands;
@@ -937,13 +988,44 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       Electron_ooEMOop.push_back(electrons_iter->ooEMOop());
       Electron_mHits.push_back(electrons_iter->missingHits());
       Electron_charge.push_back(electrons_iter->charge());
-      Electron_tkiso.push_back(electrons_iter->trackIso());
+      Electron_trkiso.push_back(electrons_iter->trackIso());
       Electron_ecaliso.push_back(electrons_iter->ecalIso());
       Electron_hcaliso.push_back(electrons_iter->hcalIso());
+      Electron_d0.push_back(electrons_iter->d0());
+      Electron_dz.push_back(electrons_iter->dz());
       n_ele++;
 
       ScoutingParticle tmp(electrons_iter->pt(),electrons_iter->eta(),electrons_iter->phi(),electrons_iter->m(),(-11)*electrons_iter->charge(),0);
       PFcands.push_back(tmp);
+      TLorentzVector electron_p4 = TLorentzVector();
+      electron_p4.SetPtEtaPhiM(electrons_iter->pt(), electrons_iter->eta(), electrons_iter->phi(), electrons_iter->m());
+      float combinediso; 
+      bool electronID = false;
+      if(abs(electrons_iter->eta())<1.479){
+       combinediso = (electrons_iter->trackIso() + std::max(0.f,electrons_iter->ecalIso() -1.f) + electrons_iter->hcalIso()) / electron_p4.Et();
+        electronID = 
+        (fabs(electrons_iter->dEtaIn()) < 0.007)
+        & (fabs(electrons_iter->dPhiIn()) < 0.15)
+        & (electrons_iter->sigmaIetaIeta() < 0.01)
+        & (electrons_iter->hOverE() < 0.12)
+        & (fabs(electrons_iter->d0()) < 0.02)
+        & (fabs(electrons_iter->dz()) < 0.2)
+        & (electrons_iter->ooEMOop() < 0.05)
+        & (combinediso/electrons_iter->pt() < 0.15);
+      }else{
+       combinediso = (electrons_iter->trackIso() + electrons_iter->ecalIso()  + electrons_iter->hcalIso()) / electron_p4.Et();
+        electronID = 
+        (fabs(electrons_iter->dEtaIn()) < 0.009)
+        & (fabs(electrons_iter->dPhiIn()) < 0.10)
+        & (electrons_iter->sigmaIetaIeta() < 0.03)
+        & (electrons_iter->hOverE() < 0.10)
+        & (fabs(electrons_iter->d0()) < 0.02)
+        & (fabs(electrons_iter->dz()) < 0.2)
+        & (electrons_iter->ooEMOop() < 0.05)
+        & (combinediso/electrons_iter->pt() < 0.15);
+      }
+      Electron_combinediso.push_back(combinediso);
+      Electron_ID.push_back(electronID);
     }}
 
   // *
@@ -1571,6 +1653,8 @@ if(runOffline){
   Muon_hcaliso.clear();
   Muon_trkiso.clear();
   Muon_chi2.clear();
+  Muon_isGlobalMuon.clear();
+  Muon_isTrackerMuon.clear();
   Muon_ndof.clear();
   Muon_charge.clear();
   Muon_dxy.clear();
@@ -1626,6 +1710,8 @@ if(runOffline){
     Muon_trketaerror.push_back(muons_iter->trk_phiError());
     Muon_trkdszerror.push_back(muons_iter->trk_dsz());
     Muon_trkdsz.push_back(muons_iter->trk_dszError());
+    Muon_isGlobalMuon.push_back(muons_iter->isGlobalMuon());
+    Muon_isTrackerMuon.push_back(muons_iter->isTrackerMuon());
     n_mu++;
   }
   }
