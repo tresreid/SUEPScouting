@@ -820,7 +820,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   Handle<vector<pat::PackedCandidate> > tracksH2;
   bool mini_track = false;
   //Handle<vector<reco::Track> > tracksH;
-  printf("ERA!!!! %d\n",era_16);
+  //printf("ERA!!!! %d\n",era_16);
   //if(isMC and era_16 and not doSignal){ runScouting = false;}
   //if(isMC){runOffline = true;}
   if(auto handle = iEvent.getHandle(pfcandsToken)){
@@ -832,7 +832,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   if(auto handle = iEvent.getHandle(offlineTracksToken2)){
     runOffline = true;
   }
-  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  //printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
   if(runScouting){
   //if(not (isMC and era_16)){
     iEvent.getByToken(electronsToken, electronsH);
