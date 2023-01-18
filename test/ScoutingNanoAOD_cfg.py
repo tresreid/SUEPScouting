@@ -300,8 +300,10 @@ if(runSig):
 #if(params.signal):
   from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
   process.prefiringweight = l1PrefiringWeightProducer.clone(
-  #ThePhotons           = cms.InputTag("hltScoutingEgammaPacker"),
-  TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
+  ThePhotons           = cms.InputTag("hltScoutingEgammaPacker"),
+  TheMuons             = cms.InputTag("hltScoutingMuonPacker"),
+  TheJets            = cms.InputTag("hltScoutingPFPacker"),
+  #TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
   #TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), #this should be the slimmedJets collection with up to date JECs 
   DataEraECAL = cms.string("2017BtoF"), #Use 2016BtoH for 2016
   DataEraMuon = cms.string("20172018"), #Use 2016 for 2016
