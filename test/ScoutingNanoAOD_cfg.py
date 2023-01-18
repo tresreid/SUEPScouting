@@ -113,12 +113,12 @@ params.register(
 #    'Flag to indicate whether or not signal is run'
 #)
 
-params.register(
-    'monitor', 
-    False, 
-    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
-    'Flag to indicate whether or not signal is run'
-)
+#params.register(
+#    'monitor', 
+#    False, 
+#    VarParsing.multiplicity.singleton,VarParsing.varType.bool,
+#    'Flag to indicate whether or not moninor is run'
+#)
 
 # Define the process
 process = cms.Process("LL")
@@ -229,13 +229,16 @@ L1Info = [
     'L1_DoubleJet30er2p5_Mass_Min330_dEta_Max1p5',
     'L1_DoubleJet30er2p5_Mass_Min360_dEta_Max1p5',
     'L1_ETT2000']
+runSig = False
+if "SUEP" in readFiles[0]:
+  runSig = True
 
 process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     doL1              = cms.bool(False),
     doData            = cms.bool(not params.isMC and not params.signal),
-    doSignal          = cms.bool(params.signal),
+    doSignal          = cms.bool(runSig), 
     isMC              = cms.bool(params.isMC),
-    monitor           = cms.bool(params.monitor),
+    #monitor           = cms.bool(params.monitor),
     era_16            = cms.bool(params.era == "2016"),
     #runScouting          = cms.bool(params.runScouting),
     #runOffline          = cms.bool(params.runOffline),
@@ -275,7 +278,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
     pileupinfo_sig    = cms.InputTag("slimmedAddPileupInfo"),
     geneventinfo     = cms.InputTag("generator"),
     gens              = cms.InputTag("genParticles"),
-    gens_sig          = cms.InputTag("prunedGenParticles"),
+    gens_sig          = cms.InputTag("genParticles"),
+    #gens_sig          = cms.InputTag("prunedGenParticles"),
     #rho               = cms.InputTag("fixedGridRhoFastjetAllScouting"),
     rho2              = cms.InputTag("hltScoutingPFPacker","rho"),
 
@@ -292,10 +296,14 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 #if(runRho):
 #  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
-if(params.signal):
+if(runSig):
+#if(params.signal):
   from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
   process.prefiringweight = l1PrefiringWeightProducer.clone(
-  TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
+  ThePhotons           = cms.InputTag("hltScoutingEgammaPacker"),
+  TheMuons             = cms.InputTag("hltScoutingMuonPacker"),
+  TheJets            = cms.InputTag("hltScoutingPFPacker"),
+  #TheJets = cms.InputTag("slimmedJets"), #this should be the slimmedJets collection with up to date JECs 
   #TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), #this should be the slimmedJets collection with up to date JECs 
   DataEraECAL = cms.string("2017BtoF"), #Use 2016BtoH for 2016
   DataEraMuon = cms.string("20172018"), #Use 2016 for 2016
