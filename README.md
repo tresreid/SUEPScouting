@@ -1,7 +1,7 @@
 # To check out
 ```
-cmsrel CMSSW_11_1_0 #You can use 10_X_X too
-cd CMSSW_11_1_0/src
+cmsrel CMSSW_10_2_26 #You can use 10_X_X too
+cd CMSSW_10_2_26/src
 mkdir PhysicsTools
 cd PhysicsTools
 git clone https://github.com/SUEPPhysics/SUEPScouting.git 
