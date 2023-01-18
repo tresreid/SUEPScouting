@@ -1,8 +1,9 @@
 # To check out
 ```
-cmsrel CMSSW_10_6_0 #you can use CMSSW_11_1_0
-cd CMSSW_10_6_0/src
+cmsrel CMSSW_10_6_26 #you can use CMSSW_11_1_0
+cd CMSSW_10_6_26/src
 git clone -b mods https://github.com/SUEPPhysics/SUEPScouting.git PhysicsTools/SUEPScouting
+git clone -b master https://github.com/tresreid/PatUtils.git PhysicsTools/PatUtils
 ```
 
 # To setup and compile
