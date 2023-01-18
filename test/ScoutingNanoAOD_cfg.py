@@ -296,7 +296,8 @@ process.mmtree = cms.EDAnalyzer('ScoutingNanoAOD',
 #if(runRho):
 #  process.myTask = cms.Task(process.fixedGridRhoFastjetAllScouting)
 
-if(runSig):
+if(params.isMC):
+#if(runSig):
 #if(params.signal):
   from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
   process.prefiringweight = l1PrefiringWeightProducer.clone(
