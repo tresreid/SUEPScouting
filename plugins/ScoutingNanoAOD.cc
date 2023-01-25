@@ -1972,7 +1972,8 @@ if(runOffline){
   }else{// rho=0;
     rho2=0;}
 
-  if(doSignal){
+  if(isMC){
+  //if(doSignal){
     PSweights = genEvtInfo->weights();
     Handle<double> prefirewgt;
     iEvent.getByToken(prefireToken, prefirewgt);
