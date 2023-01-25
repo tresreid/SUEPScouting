@@ -290,38 +290,38 @@ private:
   vector<Float16_t>  	       Jet_nConstituents;
   vector<bool>                 Jet_passId;
 
-  vector<Float16_t> 	     OffJet_pt;
-  vector<Float16_t>        OffJet_eta;
-  vector<Float16_t>        OffJet_phi;
-  vector<Float16_t>	       OffJet_m;
-  vector<Float16_t>	       OffJet_area;
-  vector<Float16_t>	       OffJet_chargedHadronEnergy;
-  vector<Float16_t>        OffJet_neutralHadronEnergy;
-  vector<Float16_t>	       OffJet_photonEnergy;
-  vector<Float16_t>	       OffJet_electronEnergy;
-  vector<Float16_t>	       OffJet_muonEnergy;
-  vector<Float16_t>	       OffJet_HFHadronEnergy;
-  vector<Float16_t>	       OffJet_HFEMEnergy;
-  vector<Float16_t>	       OffJet_HOEnergy;
-  vector<Float16_t>	       OffJet_chargedHadronMultiplicity;
-  vector<Float16_t>        OffJet_neutralHadronMultiplicity;
-  vector<Float16_t>	       OffJet_photonMultiplicity;
-  vector<Float16_t>	       OffJet_electronMultiplicity;
-  vector<Float16_t>	       OffJet_muonMultiplicity;
-  vector<Float16_t>	       OffJet_HFHadronMultiplicity;
-  vector<Float16_t>	       OffJet_HFEMMultiplicity;
-  vector<Float16_t> 	     OffJet_csv;
-  vector<Float16_t> 	     OffJet_mvaDiscriminator;
-  vector<Float16_t>  	     OffJet_nConstituents;
-  vector<bool>             OffJet_passId;
+  //vector<Float16_t> 	     OffJet_pt;
+  //vector<Float16_t>        OffJet_eta;
+  //vector<Float16_t>        OffJet_phi;
+  //vector<Float16_t>	       OffJet_m;
+  //vector<Float16_t>	       OffJet_area;
+  //vector<Float16_t>	       OffJet_chargedHadronEnergy;
+  //vector<Float16_t>        OffJet_neutralHadronEnergy;
+  //vector<Float16_t>	       OffJet_photonEnergy;
+  //vector<Float16_t>	       OffJet_electronEnergy;
+  //vector<Float16_t>	       OffJet_muonEnergy;
+  //vector<Float16_t>	       OffJet_HFHadronEnergy;
+  //vector<Float16_t>	       OffJet_HFEMEnergy;
+  //vector<Float16_t>	       OffJet_HOEnergy;
+  //vector<Float16_t>	       OffJet_chargedHadronMultiplicity;
+  //vector<Float16_t>        OffJet_neutralHadronMultiplicity;
+  //vector<Float16_t>	       OffJet_photonMultiplicity;
+  //vector<Float16_t>	       OffJet_electronMultiplicity;
+  //vector<Float16_t>	       OffJet_muonMultiplicity;
+  //vector<Float16_t>	       OffJet_HFHadronMultiplicity;
+  //vector<Float16_t>	       OffJet_HFEMMultiplicity;
+  //vector<Float16_t> 	     OffJet_csv;
+  //vector<Float16_t> 	     OffJet_mvaDiscriminator;
+  //vector<Float16_t>  	     OffJet_nConstituents;
+  //vector<bool>             OffJet_passId;
   
   vector<Float16_t> offlineTrack_pt;
   vector<Float16_t> offlineTrack_m;
-  vector<Float16_t> offlineTrack_dxy;
+  //vector<Float16_t> offlineTrack_dxy;
   vector<Float16_t> offlineTrack_dzError;
-  vector<Float16_t> offlineTrack_ptError;
+  //vector<Float16_t> offlineTrack_ptError;
   vector<Float16_t> offlineTrack_quality;
-  vector<Float16_t> offlineTrack_chi2;
+  //vector<Float16_t> offlineTrack_chi2;
   vector<Float16_t> offlineTrack_eta;
   vector<Int_t> offlineTrack_event;
   vector<Float16_t> offlineTrack_phi;
@@ -329,25 +329,27 @@ private:
   vector<Float16_t> offlineTrack_vz;
   vector<bool> offlineTrack_paired;
   vector<bool> onlineTrack_paired;
-  vector<Float16_t> offlineTrack_PFcandpv;
-  vector<Float16_t> offlineTrack_PFcandpt;
-  vector<Float16_t> offlineTrack_PFcanddz;
-  vector<Float16_t> offlineTrack_PFcandeta;
-  vector<Float16_t> offlineTrack_PFcandphi;
-  vector<Float16_t> offlineTrack_PFcandq;
+  vector<Int_t> offlineTrack_PFcandID;
+  //vector<Float16_t> offlineTrack_PFcandpv;
+  //vector<Float16_t> offlineTrack_PFcandpt;
+  //vector<Float16_t> offlineTrack_PFcanddz;
+  //vector<Float16_t> offlineTrack_PFcandeta;
+  //vector<Float16_t> offlineTrack_PFcandphi;
+  //vector<Float16_t> offlineTrack_PFcandq;
   vector<Float16_t> onlineTrack_dR;
-  vector<Float16_t> onlineTrack_offlinept;
-  vector<Float16_t> onlineTrack_offlineeta;
-  vector<Float16_t> onlineTrack_offlinephi;
-  float offline_count;
-  float offlinematched_count;
-  float offline_frac;
-  float offline_countHi;
-  float offlinematched_countHi;
-  float offline_fracHi;
-  float offline_countLo;
-  float offlinematched_countLo;
-  float offline_fracLo;
+  vector<Int_t> onlineTrack_offlineID;
+  //vector<Float16_t> onlineTrack_offlinept;
+  //vector<Float16_t> onlineTrack_offlineeta;
+  //vector<Float16_t> onlineTrack_offlinephi;
+  //float offline_count;
+  //float offlinematched_count;
+  //float offline_frac;
+  //float offline_countHi;
+  //float offlinematched_countHi;
+  //float offline_fracHi;
+  //float offline_countLo;
+  //float offlinematched_countLo;
+  //float offline_fracLo;
 
   //PFCand
   UInt_t                       n_pfcand;
@@ -561,39 +563,41 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Photon_HoE"            	        ,&Photon_HoE                    );
   tree->Branch("Photon_sigmaietaieta"           ,&Photon_sigmaietaieta	        );
 
-  tree->Branch("offline_frac"                ,&offline_frac    );
-  tree->Branch("offline_count"                 ,&offline_count     );
-  tree->Branch("offlinematched_count"                ,&offlinematched_count    );
-  tree->Branch("offline_fracHi"                ,&offline_fracHi    );
-  tree->Branch("offline_countHi"                 ,&offline_countHi     );
-  tree->Branch("offlinematched_countHi"                ,&offlinematched_countHi    );
-  tree->Branch("offline_fracLo"                ,&offline_fracLo    );
-  tree->Branch("offline_countLo"                 ,&offline_countLo     );
-  tree->Branch("offlinematched_countLo"                ,&offlinematched_countLo    );
+  //tree->Branch("offline_frac"                ,&offline_frac    );
+  //tree->Branch("offline_count"                 ,&offline_count     );
+  //tree->Branch("offlinematched_count"                ,&offlinematched_count    );
+  //tree->Branch("offline_fracHi"                ,&offline_fracHi    );
+  //tree->Branch("offline_countHi"                 ,&offline_countHi     );
+  //tree->Branch("offlinematched_countHi"                ,&offlinematched_countHi    );
+  //tree->Branch("offline_fracLo"                ,&offline_fracLo    );
+  //tree->Branch("offline_countLo"                 ,&offline_countLo     );
+  //tree->Branch("offlinematched_countLo"                ,&offlinematched_countLo    );
   tree->Branch("offlineTrack_pt"                 ,&offlineTrack_pt     );
   tree->Branch("offlineTrack_m"                 ,&offlineTrack_m     );
-  tree->Branch("offlineTrack_dxy"                 ,&offlineTrack_dxy     );
+  //tree->Branch("offlineTrack_dxy"                 ,&offlineTrack_dxy     );
   tree->Branch("offlineTrack_eta"                ,&offlineTrack_eta    );
   tree->Branch("offlineTrack_event"                ,&offlineTrack_event    );
   tree->Branch("offlineTrack_dzError"                ,&offlineTrack_dzError    );
-  tree->Branch("offlineTrack_ptError"                ,&offlineTrack_ptError    );
+  //tree->Branch("offlineTrack_ptError"                ,&offlineTrack_ptError    );
   tree->Branch("offlineTrack_quality"                ,&offlineTrack_quality    );
-  tree->Branch("offlineTrack_chi2"                ,&offlineTrack_chi2    );
+  //tree->Branch("offlineTrack_chi2"                ,&offlineTrack_chi2    );
   tree->Branch("offlineTrack_phi"                ,&offlineTrack_phi    );
   tree->Branch("offlineTrack_dR"                 ,&offlineTrack_dR     );
   tree->Branch("offlineTrack_vz"                 ,&offlineTrack_vz     );
   tree->Branch("offlineTrack_paired"                 ,&offlineTrack_paired     );
   tree->Branch("onlineTrack_paired"                ,&onlineTrack_paired    );
-  tree->Branch("offlineTrack_PFcandpt"                 ,&offlineTrack_PFcandpt     );
-  tree->Branch("offlineTrack_PFcandpv"                 ,&offlineTrack_PFcandpv     );
-  tree->Branch("offlineTrack_PFcanddz"                 ,&offlineTrack_PFcanddz     );
-  tree->Branch("offlineTrack_PFcandeta"                ,&offlineTrack_PFcandeta    );
-  tree->Branch("offlineTrack_PFcandphi"                ,&offlineTrack_PFcandphi    );
-  tree->Branch("offlineTrack_PFcandq"                ,&offlineTrack_PFcandq    );
+  tree->Branch("offlineTrack_PFcandID"                 ,&offlineTrack_PFcandID     );
+  //tree->Branch("offlineTrack_PFcandpt"                 ,&offlineTrack_PFcandpt     );
+  //tree->Branch("offlineTrack_PFcandpv"                 ,&offlineTrack_PFcandpv     );
+  //tree->Branch("offlineTrack_PFcanddz"                 ,&offlineTrack_PFcanddz     );
+  //tree->Branch("offlineTrack_PFcandeta"                ,&offlineTrack_PFcandeta    );
+  //tree->Branch("offlineTrack_PFcandphi"                ,&offlineTrack_PFcandphi    );
+  //tree->Branch("offlineTrack_PFcandq"                ,&offlineTrack_PFcandq    );
   tree->Branch("onlineTrack_dR"                ,&onlineTrack_dR    );
-  tree->Branch("onlineTrack_offlinept"                 ,&onlineTrack_offlinept     );
-  tree->Branch("onlineTrack_offlineeta"                ,&onlineTrack_offlineeta    );
-  tree->Branch("onlineTrack_offlinephi"                ,&onlineTrack_offlinephi    );
+  tree->Branch("onlineTrack_offlineID"                 ,&onlineTrack_offlineID     );
+  //tree->Branch("onlineTrack_offlinept"                 ,&onlineTrack_offlinept     );
+  //tree->Branch("onlineTrack_offlineeta"                ,&onlineTrack_offlineeta    );
+  //tree->Branch("onlineTrack_offlinephi"                ,&onlineTrack_offlinephi    );
 
   tree->Branch("n_pfcand"            	        ,&n_pfcand 		        ,"n_pfcand/i");	
   tree->Branch("n_pfMu"            	        ,&n_pfMu 		        ,"n_pfMu/i");	
@@ -704,30 +708,30 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Jet_nConstituents"              ,&Jet_nConstituents             );
   tree->Branch("Jet_passId"                     ,&Jet_passId                    );
   
-  tree->Branch("OffJet_pt"            	           ,&OffJet_pt                        );
-  tree->Branch("OffJet_eta"            	           ,&OffJet_eta                       );
-  tree->Branch("OffJet_phi"            	           ,&OffJet_phi                       );
-  tree->Branch("OffJet_m"            	             ,&OffJet_m                         );
-  tree->Branch("OffJet_area"            	         ,&OffJet_area                      );
-  tree->Branch("OffJet_chargedHadronEnergy"        ,&OffJet_chargedHadronEnergy       );
-  tree->Branch("OffJet_neutralHadronEnergy"        ,&OffJet_neutralHadronEnergy       );
-  tree->Branch("OffJet_photonEnergy"               ,&OffJet_photonEnergy 	        );
-  tree->Branch("OffJet_electronEnergy"             ,&OffJet_electronEnergy            );
-  tree->Branch("OffJet_muonEnergy"    	           ,&OffJet_muonEnergy                );
-  tree->Branch("OffJet_HFHadronEnergy"             ,&OffJet_HFHadronEnergy            );
-  tree->Branch("OffJet_HFEMEnergy"                 ,&OffJet_HFEMEnergy                );
-  tree->Branch("OffJet_HOEnergy"                   ,&OffJet_HOEnergy                  );
-  tree->Branch("OffJet_chargedHadronMultiplicity"  ,&OffJet_chargedHadronMultiplicity );
-  tree->Branch("OffJet_neutralHadronMultiplicity"  ,&OffJet_neutralHadronMultiplicity );
-  tree->Branch("OffJet_photonMultiplicity"         ,&OffJet_photonMultiplicity        );
-  tree->Branch("OffJet_electronMultiplicity"       ,&OffJet_electronMultiplicity      );
-  tree->Branch("OffJet_muonMultiplicity"           ,&OffJet_muonMultiplicity          );
-  tree->Branch("OffJet_HFHadronMultiplicity"       ,&OffJet_HFHadronMultiplicity      );
-  tree->Branch("OffJet_HFEMMultiplicity"           ,&OffJet_HFEMMultiplicity          );
-  tree->Branch("OffJet_csv"            	           ,&OffJet_csv                       );
-  tree->Branch("OffJet_mvaDiscriminator"           ,&OffJet_mvaDiscriminator          );
-  tree->Branch("OffJet_nConstituents"              ,&OffJet_nConstituents             );
-  tree->Branch("OffJet_passId"                     ,&OffJet_passId                    );
+  //tree->Branch("OffJet_pt"            	           ,&OffJet_pt                        );
+  //tree->Branch("OffJet_eta"            	           ,&OffJet_eta                       );
+  //tree->Branch("OffJet_phi"            	           ,&OffJet_phi                       );
+  //tree->Branch("OffJet_m"            	             ,&OffJet_m                         );
+  //tree->Branch("OffJet_area"            	         ,&OffJet_area                      );
+  //tree->Branch("OffJet_chargedHadronEnergy"        ,&OffJet_chargedHadronEnergy       );
+  //tree->Branch("OffJet_neutralHadronEnergy"        ,&OffJet_neutralHadronEnergy       );
+  //tree->Branch("OffJet_photonEnergy"               ,&OffJet_photonEnergy 	        );
+  //tree->Branch("OffJet_electronEnergy"             ,&OffJet_electronEnergy            );
+  //tree->Branch("OffJet_muonEnergy"    	           ,&OffJet_muonEnergy                );
+  //tree->Branch("OffJet_HFHadronEnergy"             ,&OffJet_HFHadronEnergy            );
+  //tree->Branch("OffJet_HFEMEnergy"                 ,&OffJet_HFEMEnergy                );
+  //tree->Branch("OffJet_HOEnergy"                   ,&OffJet_HOEnergy                  );
+  //tree->Branch("OffJet_chargedHadronMultiplicity"  ,&OffJet_chargedHadronMultiplicity );
+  //tree->Branch("OffJet_neutralHadronMultiplicity"  ,&OffJet_neutralHadronMultiplicity );
+  //tree->Branch("OffJet_photonMultiplicity"         ,&OffJet_photonMultiplicity        );
+  //tree->Branch("OffJet_electronMultiplicity"       ,&OffJet_electronMultiplicity      );
+  //tree->Branch("OffJet_muonMultiplicity"           ,&OffJet_muonMultiplicity          );
+  //tree->Branch("OffJet_HFHadronMultiplicity"       ,&OffJet_HFHadronMultiplicity      );
+  //tree->Branch("OffJet_HFEMMultiplicity"           ,&OffJet_HFEMMultiplicity          );
+  //tree->Branch("OffJet_csv"            	           ,&OffJet_csv                       );
+  //tree->Branch("OffJet_mvaDiscriminator"           ,&OffJet_mvaDiscriminator          );
+  //tree->Branch("OffJet_nConstituents"              ,&OffJet_nConstituents             );
+  //tree->Branch("OffJet_passId"                     ,&OffJet_passId                    );
   
   tree->Branch("n_fatjet"                       ,&n_fatjet                      ,"n_fatjet/i");
   tree->Branch("FatJet_area"                    ,&FatJet_area                   );
@@ -1345,11 +1349,11 @@ for(int e = 0; e < static_cast<int>(truth_pts.size()); e++){//loop over pf cands
 //if(isMC or monitor){
 if(runOffline){
   offlineTrack_pt.clear();
-  offlineTrack_dxy.clear();
+  //offlineTrack_dxy.clear();
   offlineTrack_dzError.clear();
-  offlineTrack_ptError.clear();
+  //offlineTrack_ptError.clear();
   offlineTrack_quality.clear();
-  offlineTrack_chi2.clear();
+  //offlineTrack_chi2.clear();
   offlineTrack_eta.clear();
   offlineTrack_event.clear();
   offlineTrack_m.clear();
@@ -1357,26 +1361,28 @@ if(runOffline){
   offlineTrack_vz.clear();
   offlineTrack_dR.clear();
   offlineTrack_paired.clear();
-  offlineTrack_PFcandpt.clear();
-  offlineTrack_PFcanddz.clear();
-  offlineTrack_PFcandpv.clear();
-  offlineTrack_PFcandeta.clear();
-  offlineTrack_PFcandphi.clear();
-  offlineTrack_PFcandq.clear();
+  offlineTrack_PFcandID.clear();
+//  offlineTrack_PFcandpt.clear();
+//  offlineTrack_PFcanddz.clear();
+//  offlineTrack_PFcandpv.clear();
+//  offlineTrack_PFcandeta.clear();
+//  offlineTrack_PFcandphi.clear();
+//  offlineTrack_PFcandq.clear();
   onlineTrack_dR.clear();
   onlineTrack_paired.clear();
-  onlineTrack_offlinept.clear();
-  onlineTrack_offlineeta.clear();
-  onlineTrack_offlinephi.clear();
-  offlinematched_count =0;
-  offline_count =0;
-  offline_frac =0;
-  offlinematched_countHi =0;
-  offline_countHi =0;
-  offline_fracHi =0;
-  offlinematched_countLo =0;
-  offline_countLo =0;
-  offline_fracLo =0;
+  //onlineTrack_offlinept.clear();
+  onlineTrack_offlineID.clear();
+  //onlineTrack_offlineeta.clear();
+ //onlineTrack_offlinephi.clear();
+  //offlinematched_count =0;
+  //offline_count =0;
+  //offline_frac =0;
+  //offlinematched_countHi =0;
+  //offline_countHi =0;
+  //offline_fracHi =0;
+  //offlinematched_countLo =0;
+  //offline_countLo =0;
+  //offline_fracLo =0;
   vector<vector<float>> offline_dr;
   float pvsum[60] = {0};
   float pvmax = 0;
@@ -1459,12 +1465,12 @@ if(runOffline){
       offline_dr_row.push_back(dR);
     }
     offline_dr.push_back(offline_dr_row);
-    offline_count++;
-    if(tracks_iter->pt()>20){
-      offline_countHi++;
-    }else{
-      offline_countLo++;
-    }
+    //offline_count++;
+    //if(tracks_iter->pt()>20){
+    //  offline_countHi++;
+    //}else{
+    //  offline_countLo++;
+    //}
   }
   }else{
   for (auto tracks_iter = tracksH1->begin(); tracks_iter != tracksH1->end(); ++tracks_iter) {
@@ -1509,12 +1515,12 @@ if(runOffline){
       offline_dr_row.push_back(dR);
     }
     offline_dr.push_back(offline_dr_row);
-    offline_count++;
-    if(tracks_iter->pt()>20){
-      offline_countHi++;
-    }else{
-      offline_countLo++;
-    }
+    //offline_count++;
+    //if(tracks_iter->pt()>20){
+    //  offline_countHi++;
+    //}else{
+    //  offline_countLo++;
+    //}
   }
   }
 
@@ -1556,47 +1562,50 @@ if(runOffline){
         int mincol = used_online.at(it-used_offline.begin());// get dR associated with this PF cand
   
         offlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
-        if(dR < 0.02){
-          offlinematched_count++;
-          if(offlineTrack_pt.at(e)>20){
-            offlinematched_countHi++;
-          }else{
-            offlinematched_countLo++;
-          }
-        }
+        //if(dR < 0.02){
+        //  offlinematched_count++;
+        //  if(offlineTrack_pt.at(e)>20){
+        //    offlinematched_countHi++;
+        //  }else{
+        //    offlinematched_countLo++;
+        //  }
+        //}
   
         if (mincol < 0){
-          offlineTrack_PFcandpt.push_back( -1);
-          offlineTrack_PFcandeta.push_back(999);
-          offlineTrack_PFcanddz.push_back(999);
-          offlineTrack_PFcandpv.push_back(999);
-          offlineTrack_PFcandphi.push_back(999);
-          offlineTrack_PFcandq.push_back(999);
+          offlineTrack_PFcandID.push_back( -1);
+          //offlineTrack_PFcandpt.push_back( -1);
+          //offlineTrack_PFcandeta.push_back(999);
+          //offlineTrack_PFcanddz.push_back(999);
+          //offlineTrack_PFcandpv.push_back(999);
+          //offlineTrack_PFcandphi.push_back(999);
+          //offlineTrack_PFcandq.push_back(999);
           offlineTrack_paired.push_back(false);
         }else{
           offlineTrack_paired.push_back(true);
-          offlineTrack_PFcandpt.push_back( PFcand_pt.at( mincol));
-          offlineTrack_PFcandpv.push_back( PFcand_vertex.at( mincol));
-          offlineTrack_PFcandeta.push_back(PFcand_eta.at(mincol));
-          offlineTrack_PFcandphi.push_back(PFcand_phi.at(mincol));
-          offlineTrack_PFcandq.push_back(PFcand_q.at(mincol));
-          offlineTrack_PFcanddz.push_back(0);
+          offlineTrack_PFcandID.push_back(mincol);
+          //offlineTrack_PFcandpt.push_back( PFcand_pt.at( mincol));
+          //offlineTrack_PFcandpv.push_back( PFcand_vertex.at( mincol));
+          //offlineTrack_PFcandeta.push_back(PFcand_eta.at(mincol));
+          //offlineTrack_PFcandphi.push_back(PFcand_phi.at(mincol));
+          //offlineTrack_PFcandq.push_back(PFcand_q.at(mincol));
+          //offlineTrack_PFcanddz.push_back(0);
         }
       }
       else{
         offlineTrack_dR.push_back(0.3);//no match found set as fake value
-        offlineTrack_PFcandpt.push_back( -1);
-        offlineTrack_PFcandeta.push_back(999);
-        offlineTrack_PFcandphi.push_back(999);
-        offlineTrack_PFcandpv.push_back(999);
-        offlineTrack_PFcanddz.push_back(999);
-        offlineTrack_PFcandq.push_back(999);
+        offlineTrack_PFcandID.push_back( -1);
+        //offlineTrack_PFcandpt.push_back( -1);
+        //offlineTrack_PFcandeta.push_back(999);
+        //offlineTrack_PFcandphi.push_back(999);
+        //offlineTrack_PFcandpv.push_back(999);
+        //offlineTrack_PFcanddz.push_back(999);
+        //offlineTrack_PFcandq.push_back(999);
         offlineTrack_paired.push_back(false);
       }
     }
-    offline_frac = offlinematched_count/offline_count;
-    offline_fracHi = offlinematched_countHi/offline_countHi;
-    offline_fracLo = offlinematched_countLo/offline_countLo;
+    //offline_frac = offlinematched_count/offline_count;
+    //offline_fracHi = offlinematched_countHi/offline_countHi;
+    //offline_fracLo = offlinematched_countLo/offline_countLo;
     for(int e = 0; e < static_cast<int>(PFcand_pt.size()); e++){//loop over pf cands again to set dR values in proper positions
       auto it = find(used_online.begin(), used_online.end(), e); // see if PF cand has a match
       if(it != used_online.end()){
@@ -1605,22 +1614,25 @@ if(runOffline){
   
         onlineTrack_dR.push_back(dR); //push back dR at that match positon into proper position.
         if (minrow < 0){
-          onlineTrack_offlinept.push_back( -1);
-          onlineTrack_offlineeta.push_back(999);
-          onlineTrack_offlinephi.push_back(999);
+          onlineTrack_offlineID.push_back( -1);
+          //onlineTrack_offlinept.push_back( -1);
+          //onlineTrack_offlineeta.push_back(999);
+          //onlineTrack_offlinephi.push_back(999);
           onlineTrack_paired.push_back(false);
         }else{
-          onlineTrack_offlinept.push_back( offlineTrack_pt.at( minrow));
-          onlineTrack_offlineeta.push_back(offlineTrack_eta.at(minrow));
-          onlineTrack_offlinephi.push_back(offlineTrack_phi.at(minrow));
+          onlineTrack_offlineID.push_back(minrow);
+          //onlineTrack_offlinept.push_back( offlineTrack_pt.at( minrow));
+          //onlineTrack_offlineeta.push_back(offlineTrack_eta.at(minrow));
+          //onlineTrack_offlinephi.push_back(offlineTrack_phi.at(minrow));
           onlineTrack_paired.push_back(true);
         }
       }
       else{
         onlineTrack_dR.push_back(0.3);//no match found set as fake value
-        onlineTrack_offlinept.push_back( -1);
-        onlineTrack_offlineeta.push_back(999);
-        onlineTrack_offlinephi.push_back(999);
+        onlineTrack_offlineID.push_back( -1);
+        //onlineTrack_offlinept.push_back( -1);
+        //onlineTrack_offlineeta.push_back(999);
+        //onlineTrack_offlinephi.push_back(999);
         onlineTrack_paired.push_back(false);
       }
     }
@@ -1796,38 +1808,38 @@ if(runOffline){
   if(runOffline and not mini_track){
   for (auto pfjet = pfjetsoffH->begin(); pfjet != pfjetsoffH->end(); ++pfjet) {
 
-    OffJet_pt .push_back( pfjet->pt() );
-    OffJet_eta.push_back( pfjet->eta());
-    OffJet_phi.push_back( pfjet->phi());
-    OffJet_m  .push_back( pfjet->mass()  );
+    //OffJet_pt .push_back( pfjet->pt() );
+    //OffJet_eta.push_back( pfjet->eta());
+    //OffJet_phi.push_back( pfjet->phi());
+    //OffJet_m  .push_back( pfjet->mass()  );
 
-    OffJet_area.push_back( pfjet->jetArea());
+    //OffJet_area.push_back( pfjet->jetArea());
 
-    OffJet_chargedHadronEnergy.push_back( pfjet->chargedHadronEnergy());
-    OffJet_neutralHadronEnergy.push_back( pfjet->neutralHadronEnergy());
-    OffJet_photonEnergy       .push_back( pfjet->photonEnergy()       );
-    OffJet_electronEnergy     .push_back( pfjet->electronEnergy()     );
-    OffJet_muonEnergy         .push_back( pfjet->muonEnergy()     );
-    OffJet_HFHadronEnergy     .push_back( pfjet->HFHadronEnergy() );
-    OffJet_HFEMEnergy         .push_back( pfjet->HFEMEnergy()     );
-    OffJet_HOEnergy           .push_back( pfjet->hoEnergy()       );
-    
-    OffJet_chargedHadronMultiplicity.push_back( pfjet->chargedHadronMultiplicity());
-    OffJet_neutralHadronMultiplicity.push_back( pfjet->neutralHadronMultiplicity());
-    OffJet_photonMultiplicity       .push_back( pfjet->photonMultiplicity()       );
-    OffJet_electronMultiplicity     .push_back( pfjet->electronMultiplicity()     );
-    OffJet_muonMultiplicity         .push_back( pfjet->muonMultiplicity()         );
-    OffJet_HFHadronMultiplicity     .push_back( pfjet->HFHadronMultiplicity()     );
-    OffJet_HFEMMultiplicity         .push_back( pfjet->HFEMMultiplicity()         );
+    //OffJet_chargedHadronEnergy.push_back( pfjet->chargedHadronEnergy());
+    //OffJet_neutralHadronEnergy.push_back( pfjet->neutralHadronEnergy());
+    //OffJet_photonEnergy       .push_back( pfjet->photonEnergy()       );
+    //OffJet_electronEnergy     .push_back( pfjet->electronEnergy()     );
+    //OffJet_muonEnergy         .push_back( pfjet->muonEnergy()     );
+    //OffJet_HFHadronEnergy     .push_back( pfjet->HFHadronEnergy() );
+    //OffJet_HFEMEnergy         .push_back( pfjet->HFEMEnergy()     );
+    //OffJet_HOEnergy           .push_back( pfjet->hoEnergy()       );
+    //
+    //OffJet_chargedHadronMultiplicity.push_back( pfjet->chargedHadronMultiplicity());
+    //OffJet_neutralHadronMultiplicity.push_back( pfjet->neutralHadronMultiplicity());
+    //OffJet_photonMultiplicity       .push_back( pfjet->photonMultiplicity()       );
+    //OffJet_electronMultiplicity     .push_back( pfjet->electronMultiplicity()     );
+    //OffJet_muonMultiplicity         .push_back( pfjet->muonMultiplicity()         );
+    //OffJet_HFHadronMultiplicity     .push_back( pfjet->HFHadronMultiplicity()     );
+    //OffJet_HFEMMultiplicity         .push_back( pfjet->HFEMMultiplicity()         );
 
-    //OffJet_csv             .push_back( pfjet->csv() );
-    //OffJet_mvaDiscriminator.push_back( pfjet->mvaDiscriminator()    );
-    //OffJet_nConstituents   .push_back( pfjet->constituents().size() );
-    
-    //n_jet++;
+    ////OffJet_csv             .push_back( pfjet->csv() );
+    ////OffJet_mvaDiscriminator.push_back( pfjet->mvaDiscriminator()    );
+    ////OffJet_nConstituents   .push_back( pfjet->constituents().size() );
+    //
+    ////n_jet++;
 
     passJetId = jetIDoff(*pfjet);
-    OffJet_passId.push_back( passJetId );
+    //OffJet_passId.push_back( passJetId );
 
     //// apply jet ID 
     if ( passJetId == false ) continue; 
