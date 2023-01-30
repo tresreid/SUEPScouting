@@ -4,6 +4,8 @@
 #include <iostream>
 #include <math.h>
 
+#include "boost/algorithm/string.hpp"
+
 // ROOT includes
 #include <TTree.h>
 #include <TLorentzVector.h>
@@ -146,6 +148,7 @@ private:
   const edm::EDGetTokenT<double>  	prefireToken;
   const edm::EDGetTokenT<double>  	prefireTokenup;
   const edm::EDGetTokenT<double>  	prefireTokendown;
+  const edm::EDGetTokenT<GenLumiInfoHeader>  	genLumiInfoHeadTag_;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
@@ -164,6 +167,8 @@ private:
   bool era_16;
   bool runScouting = false;
   bool runOffline =false;
+  std::string label;
+  //std::string label2;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -174,6 +179,7 @@ private:
   //const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
   
   HLTPrescaleProvider hltPSProv_;
+  
   std::string hltProcess_; //name of HLT process, usually "HLT"
 
   edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
@@ -473,6 +479,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   prefireToken             (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProb"))),
   prefireTokenup           (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbUp"))),
   prefireTokendown         (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbDown"))),
+//  genLumiInfoHeadTag_      (consumes<GenLumiInfoHeader>        (iConfig.getParameter<edm::InputTag>("genLumi"))),
+  genLumiInfoHeadTag_(consumes<GenLumiInfoHeader,edm::InLumi>(edm::InputTag("generator"))),
   doL1                     (iConfig.existsAs<bool>("doL1")              ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
@@ -552,6 +560,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("scouting_trig"            	        ,&scouting_trig 			,"scounting_trig/i");
   tree->Branch("offline_trig"            	        ,&offline_trig 			,"offline_trig/i");
   tree->Branch("veto_trig"            	        ,&veto_trig 			,"veto_trig/i");
+  tree->Branch("genModel"            	        ,&label 			);
   //Photons
   tree->Branch("n_pho"            	        ,&n_pho 			,"n_pho/i");
   tree->Branch("Photon_pt"            	        ,&Photon_pt                     );
@@ -782,6 +791,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   using namespace reco;
   using namespace fastjet;
   using namespace fastjet::contrib;
+
+//  label2 = (!label.empty()) ? std::string("GenModel_") + label : "";
     
   // Handles to the EDM content
   //iEvent.getByToken(triggerBits_, triggerBits);
@@ -2185,6 +2196,20 @@ void ScoutingNanoAOD::endRun(edm::Run const&, edm::EventSetup const&) {
 }
 
 void ScoutingNanoAOD::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const&) {
+edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
+    iLumi.getByToken(genLumiInfoHeadTag_, genLumiInfoHead);
+    if (!genLumiInfoHead.isValid())
+      edm::LogWarning("LHETablesProducer")
+          << "No GenLumiInfoHeader product found, will not fill generator model string.\n";
+
+    //std::string label;
+    if (genLumiInfoHead.isValid()) {
+      label = genLumiInfoHead->configDescription();
+      printf("label: %s\n",label.c_str());
+      boost::replace_all(label, "-", "_");
+      boost::replace_all(label, "/", "_");
+      label = std::string("GenModel_") + label;
+    }
 }
 
 void ScoutingNanoAOD::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {
