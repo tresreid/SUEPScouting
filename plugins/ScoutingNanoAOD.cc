@@ -2205,7 +2205,7 @@ edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
     //std::string label;
     if (genLumiInfoHead.isValid()) {
       label = genLumiInfoHead->configDescription();
-      printf("label: %s\n",label.c_str());
+      //printf("label: %s\n",label.c_str());
       boost::replace_all(label, "-", "_");
       boost::replace_all(label, "/", "_");
       label = std::string("GenModel_") + label;
