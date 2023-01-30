@@ -146,6 +146,7 @@ private:
   const edm::EDGetTokenT<double>  	prefireToken;
   const edm::EDGetTokenT<double>  	prefireTokenup;
   const edm::EDGetTokenT<double>  	prefireTokendown;
+  const edm::EDGetTokenT<GenLumiInfoHeader>  	genLumiInfoHeadTag_;
 
   std::vector<std::string> triggerPathsVector;
   std::map<std::string, int> triggerPathsMap;
@@ -473,6 +474,8 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   prefireToken             (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProb"))),
   prefireTokenup           (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbUp"))),
   prefireTokendown         (consumes<double>                                 (edm::InputTag("prefiringweight:nonPrefiringProbDown"))),
+//  genLumiInfoHeadTag_      (consumes<GenLumiInfoHeader>        (iConfig.getParameter<edm::InputTag>("genLumi"))),
+  genLumiInfoHeadTag_(consumes<GenLumiInfoHeader,edm::InLumi>(edm::InputTag("generator"))),
   doL1                     (iConfig.existsAs<bool>("doL1")              ?    iConfig.getParameter<bool>  ("doL1")            : false),
   doData                   (iConfig.existsAs<bool>("doData")            ?    iConfig.getParameter<bool>  ("doData")            : false),
   doSignal                 (iConfig.existsAs<bool>("doSignal")          ?    iConfig.getParameter<bool>  ("doSignal")            : false),
@@ -2185,6 +2188,17 @@ void ScoutingNanoAOD::endRun(edm::Run const&, edm::EventSetup const&) {
 }
 
 void ScoutingNanoAOD::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const&) {
+edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
+    iLumi.getByToken(genLumiInfoHeadTag_, genLumiInfoHead);
+    if (!genLumiInfoHead.isValid())
+      edm::LogWarning("LHETablesProducer")
+          << "No GenLumiInfoHeader product found, will not fill generator model string.\n";
+
+    std::string label;
+    if (genLumiInfoHead.isValid()) {
+      label = genLumiInfoHead->configDescription();
+      printf("label: %s\n",label.c_str());
+    }
 }
 
 void ScoutingNanoAOD::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {
