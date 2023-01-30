@@ -4,6 +4,8 @@
 #include <iostream>
 #include <math.h>
 
+#include "boost/algorithm/string.hpp"
+
 // ROOT includes
 #include <TTree.h>
 #include <TLorentzVector.h>
@@ -165,6 +167,8 @@ private:
   bool era_16;
   bool runScouting = false;
   bool runOffline =false;
+  std::string label;
+  //std::string label2;
   //edm::InputTag                algInputTag_;       
   //edm::EDGetToken              algToken_;
   //l1t::L1TGlobalUtil          *l1GtUtils_;
@@ -175,6 +179,7 @@ private:
   //const edm::EDGetTokenT<edm::TriggerResults>             	triggerResultsToken;
   
   HLTPrescaleProvider hltPSProv_;
+  
   std::string hltProcess_; //name of HLT process, usually "HLT"
 
   edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
@@ -555,6 +560,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("scouting_trig"            	        ,&scouting_trig 			,"scounting_trig/i");
   tree->Branch("offline_trig"            	        ,&offline_trig 			,"offline_trig/i");
   tree->Branch("veto_trig"            	        ,&veto_trig 			,"veto_trig/i");
+  tree->Branch("genModel"            	        ,&label 			);
   //Photons
   tree->Branch("n_pho"            	        ,&n_pho 			,"n_pho/i");
   tree->Branch("Photon_pt"            	        ,&Photon_pt                     );
@@ -785,6 +791,8 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   using namespace reco;
   using namespace fastjet;
   using namespace fastjet::contrib;
+
+//  label2 = (!label.empty()) ? std::string("GenModel_") + label : "";
     
   // Handles to the EDM content
   //iEvent.getByToken(triggerBits_, triggerBits);
@@ -2194,10 +2202,13 @@ edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
       edm::LogWarning("LHETablesProducer")
           << "No GenLumiInfoHeader product found, will not fill generator model string.\n";
 
-    std::string label;
+    //std::string label;
     if (genLumiInfoHead.isValid()) {
       label = genLumiInfoHead->configDescription();
       printf("label: %s\n",label.c_str());
+      boost::replace_all(label, "-", "_");
+      boost::replace_all(label, "/", "_");
+      label = std::string("GenModel_") + label;
     }
 }
 
