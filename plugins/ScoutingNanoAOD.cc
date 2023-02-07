@@ -2007,7 +2007,7 @@ if(runOffline){
   }else{// rho=0;
     rho2=0;}
 
-  if(isMC){
+  if(doSignal or (isMC and not era_16)){
   //if(doSignal){
     PSweights = genEvtInfo->weights();
     Handle<double> prefirewgt;
