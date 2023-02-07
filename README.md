@@ -14,7 +14,15 @@ cmsenv
 scram b
 ```
 
-# To run 
+# To run QCD for 2018
 ```
-cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:aod.root outputFile=flatscouting.root maxEvents=-1
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:qcd.root outputFile=flatscouting_qcd.root maxEvents=-1 isMC=true era=2018
+```
+# To run Signal (note that "SUEP" must be in the input file name)
+```
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:SUEP.root outputFile=flatscouting_signal.root maxEvents=-1 isMC=true era=2018
+```
+# To run Data
+```
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:data.root outputFile=flatscouting_data.root maxEvents=-1 isMC=false era=2018
 ```
