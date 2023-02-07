@@ -14,15 +14,15 @@ cmsenv
 scram b
 ```
 
-# To run QCD for 2018
+# To run QCD for year={2018,2017 or 2016} 2016 turns off scouting for qcd as this is not availible in the UL samples
 ```
-cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:qcd.root outputFile=flatscouting_qcd.root maxEvents=-1 isMC=true era=2018
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:qcd.root outputFile=flatscouting_qcd.root maxEvents=-1 isMC=true era=<year>
 ```
 # To run Signal (note that "SUEP" must be in the input file name)
 ```
-cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:SUEP.root outputFile=flatscouting_signal.root maxEvents=-1 isMC=true era=2018
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:SUEP.root outputFile=flatscouting_signal.root maxEvents=-1 isMC=true era=<year>
 ```
 # To run Data
 ```
-cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:data.root outputFile=flatscouting_data.root maxEvents=-1 isMC=false era=2018
+cmsRun SUEPScouting/test/ScoutingNanoAOD_cfg.py inputFiles=file:data.root outputFile=flatscouting_data.root maxEvents=-1 isMC=false era=<year>
 ```
