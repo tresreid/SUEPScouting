@@ -847,7 +847,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   if(auto handle = iEvent.getHandle(offlineTracksToken2)){
     runOffline = true;
   }
-  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  //printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
   if(runScouting){
   //if(not (isMC and era_16)){
     iEvent.getByToken(electronsToken, electronsH);
