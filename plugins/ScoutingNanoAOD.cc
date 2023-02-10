@@ -549,7 +549,7 @@ ScoutingNanoAOD::ScoutingNanoAOD(const edm::ParameterSet& iConfig):
   tree->Branch("Electron_detain"                ,&Electron_detain 	        );
   tree->Branch("Electron_mHits"                 ,&Electron_mHits 	        );
   tree->Branch("Electron_ooEMOop"               ,&Electron_ooEMOop              );
-  tree->Branch("Electron_trkiso"               ,&Electron_trkiso         );
+//  tree->Branch("Electron_trkiso"               ,&Electron_trkiso         );
   tree->Branch("Electron_ecaliso"               ,&Electron_ecaliso              );
   tree->Branch("Electron_hcaliso"               ,&Electron_hcaliso              );
   tree->Branch("Electron_combinediso"               ,&Electron_combinediso   );
@@ -847,7 +847,7 @@ void ScoutingNanoAOD::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   if(auto handle = iEvent.getHandle(offlineTracksToken2)){
     runOffline = true;
   }
-  //printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
+  printf("RUNNNING TEST| isMC %d| signal %d| data %d| scouting %d| offline %d\n",isMC,doSignal,doData,runScouting,runOffline);
   if(runScouting){
   //if(not (isMC and era_16)){
     iEvent.getByToken(electronsToken, electronsH);
